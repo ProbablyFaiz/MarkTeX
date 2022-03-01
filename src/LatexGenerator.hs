@@ -1,0 +1,2 @@
+module LatexGenerator where
+
