@@ -27,7 +27,6 @@ library
   exposed-modules:
       LatexGenerator
       Lexer
-      Lib
       Parser
       PdfGenerator
   other-modules:
@@ -36,6 +35,9 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , text >=1 && <3
+    , bytestring >=0 && <1
+    , pandoc >=2 && <3
   default-language: Haskell2010
 
 executable MarkTeX-exe
