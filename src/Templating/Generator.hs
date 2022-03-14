@@ -68,17 +68,16 @@ interpretCommand commandStr gs = withHsEnvModule gs (runInterpreter commandStr) 
 
 withHsEnvModule :: GeneratorState -> (String -> IO a) -> IO a
 withHsEnvModule (Error str) _ = error "Cannot create hs module when an error was thrown"
-withHsEnvModule gs@State {env=env} f = do
-  let fileHandler path hFile = do
-      isReadable <- hIsReadable hFile;
-      unless isReadable (return $ error "Cannot read env file");
-      isWriteable <- hIsWritable hFile;
-      unless isWriteable (return $ error "Cannot write env file");
-      hPutStr hFile (createEnvDefinition env);
-      hFlushAll hFile;
-      hClose hFile;
-      f path;
-  withTempFile "." ".hs" fileHandler;
+withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; where 
+  fileHandler path hFile = do 
+    isReadable <- hIsReadable hFile;
+    unless isReadable (return $ error "Cannot read env file");
+    isWriteable <- hIsWritable hFile;
+    unless isWriteable (return $ error "Cannot write env file");
+    hPutStr hFile (createEnvDefinition env);
+    hFlushAll hFile;
+    hClose hFile;
+    f path;
 
 createEnvDefinition :: IMap -> String 
 createEnvDefinition imap = "module IEnv where\r\n" ++
