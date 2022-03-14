@@ -18,6 +18,11 @@ import Text.Pandoc (readLaTeX, writeLaTeX, runIO, Pandoc(..), PandocIO(..), Read
 import Text.Pandoc.PDF (makePDF)
 import Text.Pandoc.Options (def)
 
+-- This did not really work actually
+-- Better to use the command line tool pandoc
+-- Actually then we might as well just use pdflatex, because pandoc uses this under the hood
+-- Besides that pandoc does not work 100% correctly when converting tex to pdf
+
 generatePdf :: IO ()
 generatePdf =
     do putStrLn "Reading file..."
