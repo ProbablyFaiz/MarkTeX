@@ -27,9 +27,9 @@ library
       TemplateLang
       TemplateLang.Boolean
       TemplateLang.Command
+      TemplateLang.Data
       TemplateLang.Instances
       TemplateLang.List
-      TemplateLang.Map
       TemplateLang.Number
       TemplateLang.Values
   other-modules:

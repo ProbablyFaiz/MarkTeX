@@ -16,14 +16,14 @@ import Control.Monad (unless)
 
 data GeneratorState = Error String | State {
   outputText :: String,
-  documentSettings :: IMap,
-  env :: IMap
+  documentSettings :: TData,
+  env :: TData
 }
 
-initialState :: IMap -> GeneratorState
+initialState :: TData -> GeneratorState
 initialState idata = State {outputText="", documentSettings=M.empty, env=idata}
 
-evalTExpr :: TExpr -> IMap -> IO GeneratorState
+evalTExpr :: TExpr -> TData -> IO GeneratorState
 evalTExpr expr idata = evalTExpr' expr (initialState idata)
 
 evalTExpr' :: TExpr -> GeneratorState -> IO GeneratorState
@@ -52,7 +52,7 @@ evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
 evalMetaBlock (IfE b)     expr   gs               = if b then evalTExpr' expr gs else return gs
 evalMetaBlock (If val)    expr   gs               = evalMetaBlock (IfE $ toBool val) expr gs
-evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (IfE $ toBool (lookupIMap str env)) expr gs
+evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (IfE $ toBool (lookupTData str env)) expr gs
 evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 
 interpretCommand :: String -> GeneratorState -> IO (Either I.InterpreterError MetaCommand)
@@ -63,7 +63,7 @@ interpretCommand commandStr gs = withHsEnvModule gs (runInterpreter commandStr) 
   createInterpreter :: String -> String -> I.Interpreter MetaCommand 
   createInterpreter commandStr env_path = do
     I.loadModules [env_path];
-    I.setTopLevelModules ["IEnv"];
+    I.setTopLevelModules ["TEnv"];
     I.interpret commandStr (I.as::MetaCommand);
 
 withHsEnvModule :: GeneratorState -> (String -> IO a) -> IO a
@@ -79,19 +79,19 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
     hClose hFile;
     f path;
 
-createEnvDefinition :: IMap -> String 
-createEnvDefinition imap = "module IEnv where\r\n" ++
+createEnvDefinition :: TData -> String 
+createEnvDefinition dat = "module TEnv where\r\n" ++
   "import qualified Data.Map as M\r\n" ++
   "import TemplateLang\r\n" ++
   "import Data.Boolean\r\n" ++
-  "env :: IMap\r\n" ++
-  "env = M.fromList " ++ show (M.toList imap) ++ "\r\n" ++
-  "get :: String -> InputValue" ++ "\r\n" ++
-  "get s = lookupIMap s env \r\n"
+  "env :: TData\r\n" ++
+  "env = M.fromList " ++ show (M.toList dat) ++ "\r\n" ++
+  "get :: String -> TValue" ++ "\r\n" ++
+  "get s = lookupTData s env \r\n"
 
 -- SMALL VERIFICATION TESTS:
-testData :: IMap 
-testData = M.fromList [("productname", IString "Bike"), ("exists", INumber 1)]
+testData :: TData 
+testData = M.fromList [("productname", TString "Bike"), ("exists", TNumber 1)]
 
 testExpr :: TExpr 
 testExpr = Seq [
