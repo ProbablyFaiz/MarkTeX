@@ -1,4 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
 module TemplateLang.Values where
 
 import qualified Data.Map as M

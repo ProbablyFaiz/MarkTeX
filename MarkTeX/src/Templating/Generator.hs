@@ -50,9 +50,8 @@ evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
-evalMetaBlock (IfE b)     expr   gs               = if b then evalTExpr' expr gs else return gs
-evalMetaBlock (If val)    expr   gs               = evalMetaBlock (IfE $ toBool val) expr gs
-evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (IfE $ toBool (lookupTData str env)) expr gs
+evalMetaBlock (If b)     expr   gs                = if b then evalTExpr' expr gs else return gs
+evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If $ toBool (lookupTData str env)) expr gs
 evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 
 interpretCommand :: String -> GeneratorState -> IO (Either I.InterpreterError MetaCommand)
@@ -64,6 +63,7 @@ interpretCommand commandStr gs = withHsEnvModule gs (runInterpreter commandStr) 
   createInterpreter commandStr env_path = do
     I.loadModules [env_path];
     I.setTopLevelModules ["TEnv"];
+    I.setImportsQ [("Prelude", Just "P")];
     I.interpret commandStr (I.as::MetaCommand);
 
 withHsEnvModule :: GeneratorState -> (String -> IO a) -> IO a
@@ -81,25 +81,27 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
 
 createEnvDefinition :: TData -> String 
 createEnvDefinition dat = "module TEnv where\r\n" ++
+  "import qualified Prelude as P\r\n" ++
+  "import Prelude hiding " ++ hidePreludeString ++ "\r\n" ++
   "import qualified Data.Map as M\r\n" ++
   "import TemplateLang\r\n" ++
-  "import Data.Boolean\r\n" ++
   "env :: TData\r\n" ++
   "env = M.fromList " ++ show (M.toList dat) ++ "\r\n" ++
-  "get :: String -> TValue" ++ "\r\n" ++
+  "get :: P.String -> TValue" ++ "\r\n" ++
   "get s = lookupTData s env \r\n"
 
 -- SMALL VERIFICATION TESTS:
 testData :: TData 
-testData = M.fromList [("productname", TString "Bike"), ("exists", TNumber 1)]
+testData = M.fromList [("productname", TString "Bike"), ("exists", TNumber 1), ("Price", TNumber 20)]
 
 testExpr :: TExpr 
 testExpr = Seq [
     Text "This is some test input\n",
-    Block "If (get \"doesntexist\")" (Text "Not shown because variable doesn't exist\n"),
-    Block "If $ notB(get \"doesntexist\")" (Text "Shown because we negate it\n"),
+    Block "tIf (get \"doesntexist\")" (Text "Not shown because variable doesn't exist\n"),
+    Block "tIfNot (get \"doesntexist\")" (Text "Shown because we negate it\n"),
+    Block "tIf (get \"Price\" > 10)" (Text "More than 10"),
     Text "\n",
-    Block "IfVar \"productname\"" (Seq $ [Text "Productname exists!: ", Command "InsertVar \"productname\""])
+    Block "IfVar \"productname\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"productname\""])
   ]
 
 runGeneratorTest :: IO ()
