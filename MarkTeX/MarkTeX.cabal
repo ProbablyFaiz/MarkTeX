@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 1.22
 
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
@@ -32,6 +32,8 @@ library
       Templating.Parser
   other-modules:
       Paths_MarkTeX
+  reexported-modules:
+      TemplateLang.Values
   hs-source-dirs:
       src
   build-depends:

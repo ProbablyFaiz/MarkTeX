@@ -62,8 +62,8 @@ interpretCommand commandStr gs = withHsEnvModule gs (runInterpreter commandStr) 
   runInterpreter commandStr env_path = do I.runInterpreter (createInterpreter commandStr env_path)
   createInterpreter :: String -> String -> I.Interpreter MetaCommand 
   createInterpreter commandStr env_path = do
-    I.loadModules ["src/Templating/Commands.hs", env_path];
-    I.setTopLevelModules ["Templating.Commands", "IEnv"];
+    I.loadModules [env_path];
+    I.setTopLevelModules ["IEnv"];
     I.interpret commandStr (I.as::MetaCommand);
 
 withHsEnvModule :: GeneratorState -> (String -> IO a) -> IO a
@@ -82,7 +82,8 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
 createEnvDefinition :: IMap -> String 
 createEnvDefinition imap = "module IEnv where\r\n" ++
   "import qualified Data.Map as M\r\n" ++
-  "import Templating.Commands\r\n" ++
+  "import TemplateLang.Values\r\n" ++
+  "import Data.Boolean\r\n" ++
   "env :: IMap\r\n" ++
   "env = M.fromList " ++ show (M.toList imap) ++ "\r\n" ++
   "get :: String -> InputValue" ++ "\r\n" ++

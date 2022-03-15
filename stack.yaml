@@ -30,7 +30,6 @@ resolver:
 #   - auto-update
 #   - wai
 packages:
-- TemplateLang
 - MarkTeX
 # Dependency packages to be pulled from upstream that are not in the resolver.
 # These entries can reference officially published versions as well as
@@ -68,3 +67,4 @@ packages:
 # compiler-check: newer-minor
 extra-deps:
   - hint-0.9.0.5
+  - TemplateLang
