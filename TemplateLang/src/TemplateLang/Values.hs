@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Templating.Commands where
+module TemplateLang.Values where
 
 import qualified Data.Map as M
 

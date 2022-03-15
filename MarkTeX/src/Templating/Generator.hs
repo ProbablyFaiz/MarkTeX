@@ -4,7 +4,7 @@ module Templating.Generator where
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 
-import Templating.Commands
+import TemplateLang.Values
 import Templating.Parser
 import Text.Read (readMaybe)
 import Language.Haskell.Interpreter (loadModules)

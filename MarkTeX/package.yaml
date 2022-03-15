@@ -31,6 +31,8 @@ dependencies:
 
 library:
   source-dirs: src
+  dependencies:
+  - TemplateLang
 
 executables:
   MarkTeX-exe:
@@ -41,6 +43,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - TemplateLang
     - MarkTeX
 
 tests:
@@ -52,4 +55,5 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
+    - TemplateLang
     - MarkTeX
