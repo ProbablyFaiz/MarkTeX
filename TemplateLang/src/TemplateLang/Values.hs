@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 module TemplateLang.Values where
 
 import qualified Data.Map as M
@@ -5,10 +7,33 @@ import qualified Data.Map as M
 import Data.Data (Typeable)
 import Data.Functor.Const (Const)
 import Data.Maybe (fromMaybe)
+import Control.Monad (when)
+import GHC.Exts
 
 type TData = M.Map String TValue
 data TValue = TString String | TNumber Float | TBool Bool | TList [TValue] | TData TData | TNull
   deriving (Read, Show, Typeable)
+
+class ToTValue a where
+  toTValue :: a -> TValue
+
+instance ToTValue TValue where
+  toTValue = id
+
+instance ToTValue Bool where
+  toTValue = TBool
+
+instance ToTValue Integer where
+  toTValue = TNumber . fromInteger
+
+instance ToTValue Float where
+  toTValue = TNumber
+
+instance ToTValue String where
+  toTValue = TString
+
+instance {-# OVERLAPPABLE #-} (ToTValue a) => ToTValue [a] where
+  toTValue xs = TList $ map toTValue $ toList xs
 
 -- Utility functions
 sameCons :: TValue -> TValue -> Bool

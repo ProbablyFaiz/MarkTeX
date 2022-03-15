@@ -19,7 +19,7 @@ import TemplateLang.Command
 import Data.List
 
 hidePreludeString :: String
-hidePreludeString = "(" ++ intercalate ", " hidePreludeFunctions  ++ ")"
+hidePreludeString = "(" Prelude.++ intercalate ", " hidePreludeFunctions Prelude.++ ")"
 
 hidePreludeFunctions :: [String]
-hidePreludeFunctions = ["(||)", "(&&)", "not"]
+hidePreludeFunctions = ["(||)", "(&&)", "not", "(++)"]

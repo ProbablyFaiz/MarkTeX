@@ -36,4 +36,3 @@ instance Fractional TValue where
 
 instance Real TValue where
   toRational = toRational . toNumber
-

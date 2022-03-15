@@ -4,7 +4,7 @@ module Templating.Generator where
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 
-import TemplateLang
+import TemplateLang hiding ((++))
 import Templating.Parser
 import Text.Read (readMaybe)
 import Language.Haskell.Interpreter (loadModules)
@@ -43,6 +43,7 @@ evalTExpr' (Block str expr) gs = do
 
 evalMetaCommand :: MetaCommand -> GeneratorState -> IO GeneratorState
 evalMetaCommand _ (Error str) = return $ Error str
+evalMetaCommand (Insert val) gs@State {outputText=currText} = return gs{outputText=currText ++ toString val} 
 evalMetaCommand (InsertVar str) gs@State {outputText=currText, env=env} = case M.lookup str env of
   Just val -> return $ gs{outputText=currText ++ toString val}
   Nothing  -> return $ Error ("Variable not in scope: " ++ str)
@@ -81,6 +82,7 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
 
 createEnvDefinition :: TData -> String 
 createEnvDefinition dat = "module TEnv where\r\n" ++
+  "{-# LANGUAGE OverloadedLists #-}" ++
   "import qualified Prelude as P\r\n" ++
   "import Prelude hiding " ++ hidePreludeString ++ "\r\n" ++
   "import qualified Data.Map as M\r\n" ++
@@ -92,7 +94,7 @@ createEnvDefinition dat = "module TEnv where\r\n" ++
 
 -- SMALL VERIFICATION TESTS:
 testData :: TData 
-testData = M.fromList [("productname", TString "Bike"), ("exists", TNumber 1), ("Price", TNumber 20)]
+testData = M.fromList [("productname", TString "Bike"), ("exists", TNumber 1), ("Price", TNumber 20), ("Strings", TList [TString "S1", TString "S2"])]
 
 testExpr :: TExpr 
 testExpr = Seq [
@@ -101,7 +103,8 @@ testExpr = Seq [
     Block "tIfNot (get \"doesntexist\")" (Text "Shown because we negate it\n"),
     Block "tIf (get \"Price\" > 10)" (Text "More than 10"),
     Text "\n",
-    Block "IfVar \"productname\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"productname\""])
+    Block "IfVar \"productname\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"productname\""]),
+    Command "Insert (get \"Strings\" ++ [\"S3\"])"
   ]
 
 runGeneratorTest :: IO ()
