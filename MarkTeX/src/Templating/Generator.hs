@@ -4,7 +4,7 @@ module Templating.Generator where
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 
-import TemplateLang.Values
+import TemplateLang
 import Templating.Parser
 import Text.Read (readMaybe)
 import Language.Haskell.Interpreter (loadModules)
@@ -82,7 +82,7 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
 createEnvDefinition :: IMap -> String 
 createEnvDefinition imap = "module IEnv where\r\n" ++
   "import qualified Data.Map as M\r\n" ++
-  "import TemplateLang.Values\r\n" ++
+  "import TemplateLang\r\n" ++
   "import Data.Boolean\r\n" ++
   "env :: IMap\r\n" ++
   "env = M.fromList " ++ show (M.toList imap) ++ "\r\n" ++
