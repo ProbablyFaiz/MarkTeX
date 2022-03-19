@@ -24,6 +24,6 @@ cabal.project.local~
 .idea
 out
 .vscode/*
-Lexer
-Parser
+*/**/Lexer
+*/**/Parser 
 test*.md

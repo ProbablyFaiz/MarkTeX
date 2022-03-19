@@ -1,12 +1,14 @@
 {
-module Lexer (main, Token, alexScanTokens) where
+module Lexer (main, alexScanTokens) where
+
+import Language
 }
 
 -- TODO: Rewrite as monadic w/ startcodes so hyperlinks, templates etc. can be much less hacky
 %wrapper "basic"
 
 $digit = 0-9			-- digits
-$text = [^$white\{\}]		-- text characters
+$text = [a-zA-z0-9\#\?\.\:\;\?\,\"\!\$\(\)\/]		-- text characters
 
 tokens :-
   ^"#"{1,5}" "    { \s -> THeading $ length s }
@@ -22,24 +24,8 @@ tokens :-
   ^$digit". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }
   $white          { \s -> TText s }
-  $text+          { \s -> TText s } -- This rule should really be . but doing this now for output readability
+  .               { \s -> TText s } -- This rule should really be . but doing this now for output readability
 {
-
-data Token =
-    THeading Int |
-    TLBracket |
-    TRBracket |
-    TLHyperlink |
-    TRHyperlink |
-    TText String |
-    TBoldDelimiter |
-    TItalicDelimiter |
-    TUnorderedItemStart |
-    TOrderedItemStart |
-    TTemplate String |
-    TTemplateEnd |
-    TNewLine
-    deriving (Eq,Show)
 
 main = do
   s <- getContents
