@@ -7,8 +7,8 @@ cabal-version: 1.12
 name:           MarkTeX
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/Github username here/MarkTeX#readme>
-homepage:       https://github.com/Github username here/MarkTeX#readme
-bug-reports:    https://github.com/Github username here/MarkTeX/issues
+homepage:       https://github.com/ProbablyFaiz/infoafp-project#readme
+bug-reports:    https://github.com/ProbablyFaiz/infoafp-project/issues
 author:         Author name here
 maintainer:     Author email here
 copyright:      2019 Author name here
@@ -20,13 +20,13 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/Github username here/MarkTeX
+  location: https://github.com/ProbablyFaiz/infoafp-project
 
 library
   exposed-modules:
       LatexGenerator
-      Lexer
-      Parser
+      Parsing.Lexer
+      Parsing.Parser
       PdfGenerator
       Templating.Generator
       Templating.Parser
