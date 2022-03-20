@@ -1,8 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.33.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 0bd02974897a9c38801a24a32730757a2ba0f05339a26a28b85e7970bf542609
 
 name:           MarkTeX
 version:        0.1.0.0
@@ -24,9 +26,10 @@ source-repository head
 
 library
   exposed-modules:
+      Language
       LatexGenerator
-      Parsing.Lexer
-      Parsing.Parser
+      Lexer
+      Parser
       PdfGenerator
       Templating.Generator
       Templating.Parser
@@ -36,11 +39,13 @@ library
       src
   build-depends:
       TemplateLang
+    , array
     , base >=4.7 && <5
-    , bytestring ==0.*
+    , bytestring >=0 && <1
     , containers ==0.6.5.1
     , hint ==0.9.0.5
-    , pandoc ==2.*
+    , pandoc >=2 && <3
+    , process ==1.*
     , temporary ==1.3
     , text >=1 && <3
   default-language: Haskell2010
@@ -55,11 +60,13 @@ executable MarkTeX-exe
   build-depends:
       MarkTeX
     , TemplateLang
+    , array
     , base >=4.7 && <5
-    , bytestring ==0.*
+    , bytestring >=0 && <1
     , containers ==0.6.5.1
     , hint ==0.9.0.5
-    , pandoc ==2.*
+    , pandoc >=2 && <3
+    , process ==1.*
     , temporary ==1.3
     , text >=1 && <3
   default-language: Haskell2010
@@ -75,11 +82,13 @@ test-suite MarkTeX-test
   build-depends:
       MarkTeX
     , TemplateLang
+    , array
     , base >=4.7 && <5
-    , bytestring ==0.*
+    , bytestring >=0 && <1
     , containers ==0.6.5.1
     , hint ==0.9.0.5
-    , pandoc ==2.*
+    , pandoc >=2 && <3
+    , process ==1.*
     , temporary ==1.3
     , text >=1 && <3
   default-language: Haskell2010

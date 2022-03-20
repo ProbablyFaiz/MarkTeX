@@ -27,6 +27,8 @@ dependencies:
 - text >=1 && <3
 - bytestring >=0 && <1
 - pandoc >=2 && <3
+- process == 1.*
+- array
 
 library:
   source-dirs: src

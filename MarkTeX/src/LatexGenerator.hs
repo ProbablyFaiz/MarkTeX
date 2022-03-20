@@ -51,17 +51,17 @@ exprToLaTeX (Image s e)       = "\\begin{figure}\n"
                              ++ "\\includegraphics{" ++ s ++ "}\n"
                              ++ "\\caption{" ++ exprToLaTeX e ++ "}\n" 
                              ++ "\\end{figure}\n"
-
-exprToLaTeX (OrderedList   (Sequence es)) = "\\begin{enumerate}\n" 
-                                         ++ concatMap (\e -> "\\item " ++ exprToLaTeX e ++ "\n") es
-                                         ++ "\\end{enumerate}\n"
-exprToLaTeX (UnorderedList (Sequence es)) = "\\begin{itemize}\n"
-                                         ++ concatMap (\e -> "\\item " ++ exprToLaTeX e ++ "\n") es
-                                         ++ "\\end{itemize}\n"
-
 exprToLaTeX (OrderedList e)   = "\\begin{enumerate}\n" 
-                             ++ "\\item " ++ exprToLaTeX e ++ "\n"
+                             ++ exprsMapToLaTeX exprToItem e
                              ++ "\\end{enumerate}\n"
 exprToLaTeX (UnorderedList e) = "\\begin{itemize}\n"
-                             ++ "\\item " ++ exprToLaTeX e ++ "\n"
+                             ++ exprsMapToLaTeX exprToItem e
                              ++ "\\end{itemize}\n"
+
+exprsMapToLaTeX :: (Expr -> String) -> Expr -> String
+exprsMapToLaTeX f (Sequence es) = concatMap f es
+exprsMapToLaTeX f e             = f e
+
+exprToItem :: Expr -> String
+exprToItem e = "\\item " ++ exprToLaTeX e ++ "\n"
+
