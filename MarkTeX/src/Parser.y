@@ -65,25 +65,6 @@ Expr : "**" Expr "**" %prec FORMAT { Bold $2 }
 parseError :: [Token] -> a
 parseError ts = error $ "Parse error: " ++ show ts
 
-data RootExpr =
-    Heading Int Expr |
-    Body Expr |
-    OrderedList [Expr] |
-    UnorderedList [Expr] |
-    NewLine |
-    Template String |
-    RootSeq [RootExpr]
-    deriving Show
-
-data Expr =
-    Seq [Expr] |
-    Text String |
-    Bold Expr |
-    Italic Expr |
-    Hyperlink Expr Expr |
-    Image String String
-    deriving Show
-
 
 main = do
   s <- getContents
