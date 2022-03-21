@@ -13,6 +13,5 @@ data Token =
     TOrderedItemStart |
     TTemplate String |
     TTemplateEnd |
-    TNewLine |
-    TEof
+    TNewLine
     deriving (Eq,Show)

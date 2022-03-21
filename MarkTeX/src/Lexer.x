@@ -18,7 +18,7 @@ tokens :-
   \"\)            { \s -> TRHyperlink }
   \[              { \s -> TLBracket }
   \]              { \s -> TRBracket }
-  "{{" $white* "end" $white* "}}"      { \s -> TTemplateEnd }
+  -- "{{" $white* "end" $white* "}}"      { \s -> TTemplateEnd }
   "{{".+"}}"      { \s -> TTemplate (let s' = drop 2 s in take (length s' - 2) s') }
   ^"- "           { \s -> TUnorderedItemStart }
   ^$digit". "     { \s -> TOrderedItemStart }
