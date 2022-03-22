@@ -47,6 +47,7 @@ evalMetaCommand (Insert val) gs@State {outputText=currText} = return gs{outputTe
 evalMetaCommand (InsertVar str) gs@State {outputText=currText, env=env} = case M.lookup str env of
   Just val -> return $ gs{outputText=currText ++ toString val}
   Nothing  -> return $ Error ("Variable not in scope: " ++ str)
+evalMetaCommand (SetVar str val) gs@State {env = oldData} = let newData = M.insert str val oldData in return gs {env = newData} 
 evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
@@ -105,6 +106,11 @@ testExpr = Seq [
     Text "\n",
     Block "IfVar \"productname\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"productname\""]),
     Command "Insert (get \"Strings\" ++ [\"S3\"])"
+    
+    -- Testing the SetVar Metacommand
+    ,
+    Command "SetVar \"date\" (toTValue \"2021-01-01\")",
+    Command "InsertVar \"date\""
   ]
 
 runGeneratorTest :: IO ()
