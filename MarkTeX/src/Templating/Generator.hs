@@ -47,13 +47,21 @@ evalMetaCommand (Insert val) gs@State {outputText=currText} = return gs{outputTe
 evalMetaCommand (InsertVar str) gs@State {outputText=currText, env=env} = case M.lookup str env of
   Just val -> return $ gs{outputText=currText ++ toString val}
   Nothing  -> return $ Error ("Variable not in scope: " ++ str)
-evalMetaCommand (SetVar str val) gs@State {env = oldData} = let newData = M.insert str val oldData in return gs {env = newData} 
+evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData} 
 evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
 evalMetaBlock (If b)     expr   gs                = if b then evalTExpr' expr gs else return gs
 evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If $ toBool (lookupTData str env)) expr gs
+evalMetaBlock (For x val) expr gs@State {env = oldData} = case val of
+  TList [] -> return gs
+  TList (v:vs) -> 
+    let newData = M.insert x v oldData
+     in evalTExpr' expr gs {env = newData} >>= evalMetaBlock (For x (TList vs)) expr
+  singleVal -> 
+    let newData = M.insert x singleVal oldData 
+     in evalTExpr' expr gs {env = newData}
 evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 
 interpretCommand :: String -> GeneratorState -> IO (Either I.InterpreterError MetaCommand)
@@ -107,10 +115,11 @@ testExpr = Seq [
     Block "IfVar \"productname\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"productname\""]),
     Command "Insert (get \"Strings\" ++ [\"S3\"])"
     
-    -- Testing the SetVar Metacommand
+    -- Testing the SetVar/For Metacommands
     ,
     Command "SetVar \"date\" (toTValue \"2021-01-01\")",
-    Command "InsertVar \"date\""
+    Command "InsertVar \"date\"",
+    Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"])
   ]
 
 runGeneratorTest :: IO ()
