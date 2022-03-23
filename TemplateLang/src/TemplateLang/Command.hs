@@ -14,7 +14,8 @@ data MetaCommand = If Bool | IfVar String |
   Insert TValue | InsertVar String | 
   DocSetting String TValue | DocSettings TData |
   -- ImportQ = ModuleName QualifiedName
-  LoadHsFile String | Import String | ImportQ String String
+  LoadHsFile String | Import String | ImportQ String String |
+  SetVar String TValue | For String TValue
   deriving (Read, Show, Typeable)
 
 tIf :: (ToBool a) => a -> MetaCommand

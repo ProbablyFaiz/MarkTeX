@@ -54,12 +54,21 @@ evalMetaCommand (DocSettings tdata) gs@State {documentSettings=settings}  = retu
 evalMetaCommand (LoadHsFile str) gs       = return gs{fileImports=fileImports gs ++ [str]}
 evalMetaCommand (Import str) gs           = return gs{imports=imports gs ++ [str]}
 evalMetaCommand (ImportQ strMod strAs) gs = return gs{importsQ=importsQ gs ++ [(strMod, strAs)]}
+evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData} 
 evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
 evalMetaBlock (If b)     expr   gs                = if b then evalTExpr' expr gs else return gs
 evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If $ toBool (lookupTData str env)) expr gs
+evalMetaBlock (For x val) expr gs@State {env = oldData} = case val of
+  TList [] -> return gs
+  TList (v:vs) -> 
+    let newData = M.insert x v oldData
+     in evalTExpr' expr gs {env = newData} >>= evalMetaBlock (For x (TList vs)) expr
+  singleVal -> 
+    let newData = M.insert x singleVal oldData 
+     in evalTExpr' expr gs {env = newData}
 evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 
 interpretCommand :: String -> GeneratorState -> IO (Either I.InterpreterError MetaCommand)
@@ -122,6 +131,12 @@ testExpr = Seq [
     Text "\n",
     Block "IfVar \"product.name\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"product.name\""]),
     Command "Insert (get \"Strings\" ++ [\"S3\"])"
+    
+    -- Testing the SetVar/For Metacommands
+    ,
+    Command "SetVar \"date\" (toTValue \"2021-01-01\")",
+    Command "InsertVar \"date\"",
+    Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"])
   ]
 
 runGeneratorTest :: IO ()
