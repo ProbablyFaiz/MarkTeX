@@ -15,7 +15,7 @@ data MetaCommand = If TValue | IfVar String |
   DocSetting String TValue | DocSettings TData |
   -- ImportQ = ModuleName QualifiedName
   LoadHsFile String | Import String | ImportQ String String |
-  SetVar String TValue | For String TValue | While Bool
+  SetVar String TValue | For String TValue | While TValue
   deriving (Read, Show, Typeable)
 
 tIf :: (ToTValue a) => a -> MetaCommand
@@ -35,3 +35,6 @@ tSet str = SetVar str . toTValue
 
 tFor :: ToTValue a => String -> a -> MetaCommand
 tFor str = For str . toTValue
+
+tWhile :: ToTValue a => a -> MetaCommand
+tWhile = While . toTValue

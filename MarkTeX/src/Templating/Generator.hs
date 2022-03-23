@@ -43,7 +43,7 @@ evalTExpr' (Block str expr) gs = do
     result <- interpretCommand str gs;
     case result of
       (Left err)          -> return $ Error (show err);
-      (Right (While b))   -> if b then evalTExpr' expr gs >>= evalTExpr' (Block str expr) else return gs
+      (Right (While b))   -> if toBool b then evalTExpr' expr gs >>= evalTExpr' (Block str expr) else return gs
       (Right metaCommand) -> evalMetaBlock metaCommand expr gs;
 
 evalMetaCommand :: MetaCommand -> GeneratorState -> IO GeneratorState
@@ -141,7 +141,7 @@ testExpr = Seq [
     Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"]),
     
     Command "SetVar \"i\" (toTValue (1 :: Integer))",
-    Block "While (get \"i\" < 5)" (Seq [Text "Value of i: ", Command "InsertVar \"i\"", Text "\n", Command "SetVar \"i\" (get \"i\" + 1)"])
+    Block "tWhile (get \"i\" < 5)" (Seq [Text "Value of i: ", Command "InsertVar \"i\"", Text "\n", Command "SetVar \"i\" (get \"i\" + 1)"])
   ]
 
 runGeneratorTest :: IO ()
