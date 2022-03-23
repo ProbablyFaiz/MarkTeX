@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 module TemplateLang.Command where
 
 import TemplateLang.Values
@@ -24,6 +25,9 @@ tIf = If . toTValue
 tIfNot :: (ToTValue a) => a -> MetaCommand
 tIfNot = If . toTValue . not . toTValue 
 
+tInsert :: (ToTValue a) => a -> MetaCommand
+tInsert = Insert . toTValue
+
 tDocSetting :: ToTValue a => String -> a -> MetaCommand
 tDocSetting str = DocSetting str . toTValue
 
@@ -34,4 +38,4 @@ tSet :: ToTValue a => String -> a -> MetaCommand
 tSet str = SetVar str . toTValue
 
 tFor :: ToTValue a => String -> a -> MetaCommand
-tFor str = For str . toTValue
+tFor str x = For str (toTValue x)

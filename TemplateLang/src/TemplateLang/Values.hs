@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
+
 module TemplateLang.Values where
 
 import qualified Data.Map as M
@@ -23,17 +24,21 @@ instance ToTValue TValue where
 instance ToTValue Bool where
   toTValue = TBool
 
+instance ToTValue Int where
+  toTValue = TNumber . fromIntegral
+
 instance ToTValue Integer where
-  toTValue = TNumber . fromInteger
+  toTValue = TNumber . fromIntegral
 
 instance ToTValue Float where
   toTValue = TNumber
 
-instance ToTValue String where
-  toTValue = TString
-
 instance {-# OVERLAPPABLE #-} (ToTValue a) => ToTValue [a] where
   toTValue xs = TList $ map toTValue $ toList xs
+
+instance {-# OVERLAPPABLE #-} ToTValue String where
+  toTValue = TString
+
 
 -- Utility functions
 sameCons :: TValue -> TValue -> Bool

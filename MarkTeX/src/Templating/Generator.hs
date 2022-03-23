@@ -98,7 +98,9 @@ withHsEnvModule gs@State {env=env} f = do withTempFile "." ".hs" fileHandler; wh
 
 createEnvDefinition :: TData -> String
 createEnvDefinition dat = "module TEnv where\r\n" ++
-  "{-# LANGUAGE OverloadedLists #-}" ++
+  "{-# LANGUAGE FlexibleInstances #-}\r\n" ++
+  "{-# LANGUAGE OverloadedLists #-}\r\n" ++
+  "{-# LANGUAGE UndecidableInstances #-}\r\n" ++
   "import qualified Prelude as P\r\n" ++
   "import Prelude hiding " ++ hidePreludeString ++ "\r\n" ++
   "import qualified Data.Map as M\r\n" ++
@@ -128,6 +130,7 @@ testExpr = Seq [
     Block "tIf (get \"doesntexist\")" (Text "Not shown because variable doesn't exist\n"),
     Block "tIfNot (get \"doesntexist\")" (Text "Shown because we negate it\n"),
     Block "tIf (get \"Price\" > 10)" (Text "More than 10"),
+    Block "tIf True" (Text "True"),
     Text "\n",
     Block "IfVar \"product.name\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"product.name\""]),
     Command "Insert (get \"Strings\" ++ [\"S3\"])"
@@ -136,7 +139,8 @@ testExpr = Seq [
     ,
     Command "SetVar \"date\" (toTValue \"2021-01-01\")",
     Command "InsertVar \"date\"",
-    Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"])
+    Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"]),
+    Block "tFor \"x\" ([1, 2, 3, 10] :: [Int])" (Command "tInsert (get \"x\")")
   ]
 
 runGeneratorTest :: IO ()
