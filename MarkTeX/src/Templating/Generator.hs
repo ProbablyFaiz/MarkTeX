@@ -59,8 +59,8 @@ evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
-evalMetaBlock (If b)     expr   gs                = if b then evalTExpr' expr gs else return gs
-evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If $ toBool (lookupTData str env)) expr gs
+evalMetaBlock (If b)     expr   gs                = if toBool b then evalTExpr' expr gs else return gs
+evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If (lookupTData str env)) expr gs
 evalMetaBlock (For x val) expr gs@State {env = oldData} = case val of
   TList [] -> return gs
   TList (v:vs) -> 
