@@ -16,10 +16,12 @@ tokens :-
   \*              { \s -> TItalicDelimiter }
   \(\"            { \s -> TLHyperlink }
   \"\)            { \s -> TRHyperlink }
+  \!\[            { \s -> TImageStart }
   \[              { \s -> TLBracket }
   \]              { \s -> TRBracket }
-  -- "{{" $white* "end" $white* "}}"      { \s -> TTemplateEnd }
   "{{".+"}}"      { \s -> TTemplate (let s' = drop 2 s in take (length s' - 2) s') }
+  "{%" $white* "end" $white* "%}" { \s -> TTemplateBlockEnd }
+  "{%".+"%}"      { \s -> TTemplateBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
   ^"- "           { \s -> TUnorderedItemStart }
   ^$digit". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }
