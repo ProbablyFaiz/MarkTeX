@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -w #-}
-module Parser (main, parseMd) where
+module Parser (main, parseTokens) where
 
 import Language
 import Lexer (alexScanTokens)
@@ -24,7 +24,7 @@ happyExpList = Happy_Data_Array.listArray (0,136) ([32704,4099,0,12344,65280,13,
 {-# NOINLINE happyExpListPerState #-}
 happyExpListPerState st =
     token_strs_expected
-  where token_strs = ["error","%dummy","%start_parseMd","RootExpr","Expr","PlainText","heading","\"**\"","\"*\"","text","\"\\n\"","\"- \"","\"n. \"","templ","tblockstart","tblockend","\"![\"","\"[\"","\"]\"","\"(\"","\")\"","%eof"]
+  where token_strs = ["error","%dummy","%start_parseTokens","RootExpr","Expr","PlainText","heading","\"**\"","\"*\"","text","\"\\n\"","\"- \"","\"n. \"","templ","tblockstart","tblockend","\"![\"","\"[\"","\"]\"","\"(\"","\")\"","%eof"]
         bit_start = st Prelude.* 22
         bit_end = (st Prelude.+ 1) Prelude.* 22
         read_bit = readArrayBit happyExpList
@@ -523,7 +523,7 @@ happyReturn1 :: () => a -> b -> HappyIdentity a
 happyReturn1 = \a tks -> (Prelude.return) a
 happyError' :: () => ([(Token)], [Prelude.String]) -> HappyIdentity a
 happyError' = HappyIdentity Prelude.. (\(tokens, _) -> parseError tokens)
-parseMd tks = happyRunIdentity happySomeParser where
+parseTokens tks = happyRunIdentity happySomeParser where
  happySomeParser = happyThen (happyParse action_0 tks) (\x -> case x of {HappyAbsSyn4 z -> happyReturn z; _other -> notHappyAtAll })
 
 happySeq = happyDontSeq
@@ -547,11 +547,15 @@ concatLists (x:y:xs) = case (x, y) of
 concatLists xs = xs
 
 
+parseMd :: String -> RootExpr
+parseMd md = optimizeRootExpr $ parseTokens $ alexScanTokens md
+
+
 main = do
   s <- getContents
   print s
   print $ alexScanTokens s
-  print $ optimizeRootExpr $ parseMd $ (alexScanTokens s)
+  print $ parseMd s
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

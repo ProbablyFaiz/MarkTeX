@@ -26,4 +26,3 @@ out
 .vscode/*
 */**/Lexer
 */**/Parser 
-test*.md

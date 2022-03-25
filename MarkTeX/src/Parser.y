@@ -1,11 +1,11 @@
 {
-module Parser (main, parseMd) where
+module Parser (main, parseTokens) where
 
 import Language
 import Lexer (alexScanTokens)
 }
 
-%name parseMd
+%name parseTokens
 %tokentype { Token }
 %error { parseError }
 
@@ -89,9 +89,13 @@ concatLists (x:y:xs) = case (x, y) of
 concatLists xs = xs
 
 
+parseMd :: String -> RootExpr
+parseMd md = optimizeRootExpr $ parseTokens $ alexScanTokens md
+
+
 main = do
   s <- getContents
   print s
   print $ alexScanTokens s
-  print $ optimizeRootExpr $ parseMd $ (alexScanTokens s)
+  print $ parseMd s
 }
