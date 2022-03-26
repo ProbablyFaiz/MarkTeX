@@ -25,7 +25,6 @@ data RootExpr
   | UnorderedList [Expr]
   | NewLine
   | TemplateBlock String RootExpr
-  | Template String
   | RootSeq [RootExpr]
   deriving (Show, Eq)
 
@@ -34,6 +33,8 @@ data Expr
   | Text String
   | Bold Expr
   | Italic Expr
-  | Hyperlink Expr String
-  | Image Expr String
+  | Hyperlink Expr Expr
+  | Image Expr Expr
+  | Template String
   deriving (Show, Eq)
+

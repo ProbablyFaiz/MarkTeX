@@ -5,9 +5,9 @@ Text.
 - Some more items.
 - One more
 
-{{ for i in range }}
+{% for i in range %}
 Stuff {{ a free command }}
-{{ end }}
+{% end %}
 
 1. But I like to number my lists.
 2. Yep.

@@ -36,66 +36,84 @@ import Lexer (alexScanTokens)
 %%
 
 RootExpr : heading Expr { Heading $1 $2 }
-         | templ %prec COMMAND { Template $1 }
          | tblockstart RootExpr tblockend %prec COMMAND { TemplateBlock $1 $2 }
          | "- " Expr "\n" %prec DATA { UnorderedList [$2] }
          | "n. " Expr "\n" %prec DATA { OrderedList [$2] }
          | Expr { Body $1 }
-         | RootExpr RootExpr %prec CONCAT { 
-            case ($1, $2) of
-                (RootSeq res1, RootSeq res2) -> RootSeq (res1 ++ res2)
-                (re1, RootSeq res2) -> RootSeq (re1 : res2)
-                (RootSeq res1, re2) -> RootSeq (res1 ++ [re2])
-                (OrderedList es1, OrderedList es2) -> OrderedList (es1 ++ es2)
-                (UnorderedList es1, UnorderedList es2) -> UnorderedList (es1 ++ es2)
-                _ -> RootSeq [$1, $2]
-         }
+         | RootExpr RootExpr %prec CONCAT { RootSeq [$1, $2] }
          | "\n" { NewLine }
 
-Expr : "**" PlainText "**" %prec FORMAT { Bold (Text $2) }
-     | "*" PlainText "*" %prec FORMAT { Italic (Text $2) }
-     | "![" Expr "]" "(" PlainText ")" %prec FORMAT { Image $2 $5 }
-     | "![" "]" "(" PlainText ")" %prec FORMAT { Image (Text "") $4 } -- Allow images with no alt text
-     | "[" Expr "]" "(" PlainText ")" %prec FORMAT { Hyperlink $2 $5 }
-     | PlainText { Text $1 }
-     | Expr Expr %prec CONCAT {
-        case ($1, $2) of
-            (Seq es1, Seq es2) -> Seq (es1 ++ es2)
-            (Seq es1, e2) -> Seq (es1 ++ [e2])
-            (e1, Seq es2) -> Seq (e1 : es2)
-            (Text s1, Text s2) -> Text (s1 ++ s2)
-            _ -> Seq [$1, $2]
-        }
+Expr : "**" SafeExpr "**" %prec FORMAT { Bold $2 }
+     | "*" SafeExpr "*" %prec FORMAT { Italic $2 }
+     | "![" Expr "]" "(" SafeExpr ")" %prec FORMAT { Image $2 $5 }
+     | "![" "]" "(" SafeExpr ")" %prec FORMAT { Image (Text "") $4 } -- Allow images with no alt text
+     | "[" Expr "]" "(" SafeExpr ")" %prec FORMAT { Hyperlink $2 $5 }
+     | SafeExpr { $1 }
+     | Expr Expr %prec CONCAT { Seq [$1, $2] }
 
-PlainText : text %prec DATA { $1 }
-          | PlainText PlainText %prec CONCAT { $1 ++ $2 }
+SafeExpr : text %prec DATA { Text $1 }
+          | templ %prec COMMAND { Template $1 }
+          | SafeExpr SafeExpr %prec CONCAT { Seq [$1, $2] }
 {
 
 parseError :: [Token] -> a
 parseError ts = error $ "Parse error: " ++ show ts
 
-
 optimizeRootExpr :: RootExpr -> RootExpr
 optimizeRootExpr re = case re of
-  RootSeq res -> RootSeq (concatLists $ map optimizeRootExpr res)
+  RootSeq [re'] -> optimizeRootExpr re'
+  RootSeq res -> RootSeq (concatRootExprs $ map optimizeRootExpr res)
+  Body e -> Body (optimizeExpr e)
+  Heading h e -> Heading h (optimizeExpr e)
+  TemplateBlock t e -> TemplateBlock t (optimizeRootExpr e)
+  UnorderedList es -> UnorderedList (map optimizeExpr es)
+  OrderedList es -> OrderedList (map optimizeExpr es)
   _ -> re
 
+concatRootExprs :: [RootExpr] -> [RootExpr]
+concatRootExprs (x:y:xs) = case (x, y) of
+    (OrderedList xList, OrderedList yList) -> concatRootExprs $ OrderedList (xList ++ yList) : xs
+    (UnorderedList xList, UnorderedList yList) -> concatRootExprs $ UnorderedList (xList ++ yList) : xs
+    (RootSeq xList, RootSeq yList) -> concatRootExprs $ RootSeq (xList ++ yList) : xs
+    (RootSeq xList, re) -> concatRootExprs $ RootSeq (xList ++ [re]) : xs
+    (re, RootSeq yList) -> concatRootExprs $ RootSeq (re : yList) : xs
+    _ -> x : concatRootExprs (y : xs)
+concatRootExprs xs = xs
 
-concatLists :: [RootExpr] -> [RootExpr]
-concatLists (x:y:xs) = case (x, y) of
-    (OrderedList xList, OrderedList yList) -> concatLists $ OrderedList (xList ++ yList) : xs
-    (UnorderedList xList, UnorderedList yList) -> concatLists $ UnorderedList (xList ++ yList) : xs
-    _ -> x : concatLists (y : xs)
-concatLists xs = xs
+optimizeExpr :: Expr -> Expr
+optimizeExpr e = case e of
+  Seq [e'] -> optimizeExpr e'
+  Seq es -> Seq (concatExprs $ map optimizeExpr es)
+  Bold e -> Bold (optimizeExpr e)
+  Italic e -> Italic (optimizeExpr e)
+  Image e1 e2 -> Image (optimizeExpr e1) (optimizeExpr e2)
+  Hyperlink e1 e2 -> Hyperlink (optimizeExpr e1) (optimizeExpr e2)
+  _ -> e
+
+concatExprs :: [Expr] -> [Expr]
+concatExprs es = case es of
+    (x:y:rest) -> case (x, y) of
+        (Seq xs, Seq ys) -> concatExprs $ Seq (concatExprs xs ++ concatExprs ys) : rest
+        (Text xs, Text ys) -> concatExprs $ Text (xs ++ ys) : rest
+        (Seq xs, e) -> concatExprs $ Seq (concatExprs xs ++ [e]) : rest
+        (e, Seq ys) -> concatExprs $ Seq (e : concatExprs ys) : rest
+        _ -> x : concatExprs (y : rest)
+    _ -> es
+
+
+-- Optimizes the root expression until no further optimizations are possible
+fixRootExpr :: RootExpr -> RootExpr
+fixRootExpr re = if re == re' then re else fixRootExpr re'
+  where re' = optimizeRootExpr re
 
 
 parseMd :: String -> RootExpr
-parseMd md = optimizeRootExpr $ parseTokens $ alexScanTokens md
+parseMd md = fixRootExpr $ parseTokens $ alexScanTokens md
 
 
 main = do
   s <- getContents
   print s
-  print $ alexScanTokens s
+  -- print $ alexScanTokens s
   print $ parseMd s
 }
