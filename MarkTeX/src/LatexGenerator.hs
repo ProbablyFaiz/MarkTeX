@@ -1,66 +1,57 @@
 module LatexGenerator (documentToLaTeX) where
 
+import Language
+
 -- Definition of document and such temporarily here
-type Document = [RootExpr]
-
-data RootExpr = Heading Int Expr
-              | Body Expr
-
-data Expr = Sequence [Expr]
-          | Text String
-          | Bold Expr
-          | Italic Expr
-          | Hyperlink String Expr
-          | Image String Expr
-          | OrderedList Expr
-          | UnorderedList Expr
 
 -- example document for testing
-exampleDocument :: Document
-exampleDocument = [Heading 0 head1, Body body1, Heading 1 head1_1, Body body1_1, Heading 0 head2,  Body body2]
+exampleDocument :: RootExpr
+exampleDocument = RootSeq [Heading 0 head1, body1, Heading 1 head1_1, body1_1, Heading 0 head2, Body body2]
     where
         head1 = Bold (Text "Heading 1")
-        body1 = OrderedList (Italic (Text "Text in list"))
+        body1 = OrderedList [Italic (Text "Text in list")]
         head1_1 = Italic (Text "Heading 1.1")
-        body1_1 = UnorderedList (Sequence [Text "Text in list 1", Text "Text in list 2"])
-        head2 = Sequence [Text "This is ", Italic (Text "Heading 2")]
-        body2 = Sequence [Text "Link to Google:", Hyperlink "https://www.google.com/" (Text "Google")]
+        body1_1 = UnorderedList [Text "Text in list 1", Text "Text in list 2"]
+        head2 = Seq [Text "This is ", Italic (Text "Heading 2")]
+        body2 = Seq [Text "Link to Google:", Hyperlink (Text "https://www.google.com/") (Text "Google")]
 
 
-documentToLaTeX :: Document -> String
-documentToLaTeX es = "\\documentclass[12pt]{article}\n"
+documentToLaTeX :: RootExpr  -> String
+documentToLaTeX re = "\\documentclass[12pt]{article}\n"
                   ++ "\\usepackage{hyperref}\n"
-                  ++ "\\begin{document}\n" 
-                  ++ concatMap rootExprToLaTeX es
+                  ++ "\\begin{document}\n"
+                  ++ rootExprToLaTeX re
                   ++ "\\end{document}\n"
 
 rootExprToLaTeX :: RootExpr -> String
+rootExprToLaTeX (RootSeq es) = concatMap rootExprToLaTeX es
 rootExprToLaTeX (Heading n e) = "\\" ++ repeatList n "sub" ++ "section{" ++ exprToLaTeX e ++ "}\n"
 rootExprToLaTeX (Body      e) = exprToLaTeX e ++ "\n"
+rootExprToLaTeX (OrderedList e)   = "\\begin{enumerate}\n"
+                             ++ concatMap exprToItem e
+                             ++ "\\end{enumerate}\n"
+rootExprToLaTeX (UnorderedList e) = "\\begin{itemize}\n"
+                             ++ concatMap exprToItem e
+                             ++ "\\end{itemize}\n"
+rootExprToLaTeX NewLine = "\n"
+rootExprToLaTeX (TemplateBlock _ _) = error "TemplateBlocks should be evaluated at this stage"
 
 repeatList :: Int -> [a] -> [a]
 repeatList n = concat . replicate n
 
 exprToLaTeX :: Expr -> String
-exprToLaTeX (Sequence es)     = concatMap exprToLaTeX es
-exprToLaTeX (Text s)          = s
-exprToLaTeX (Bold e)          = "\\textbf{" ++ exprToLaTeX e ++ "}"
-exprToLaTeX (Italic e)        = "\\textit{" ++ exprToLaTeX e ++ "}"
-exprToLaTeX (Hyperlink s e)   = "\\href{" ++ s ++ "}{" ++ exprToLaTeX e ++ "}\n"
-exprToLaTeX (Image s e)       = "\\begin{figure}\n"
-                             ++ "\\includegraphics{" ++ s ++ "}\n"
-                             ++ "\\caption{" ++ exprToLaTeX e ++ "}\n" 
-                             ++ "\\end{figure}\n"
-exprToLaTeX (OrderedList e)   = "\\begin{enumerate}\n" 
-                             ++ exprsMapToLaTeX exprToItem e
-                             ++ "\\end{enumerate}\n"
-exprToLaTeX (UnorderedList e) = "\\begin{itemize}\n"
-                             ++ exprsMapToLaTeX exprToItem e
-                             ++ "\\end{itemize}\n"
-
-exprsMapToLaTeX :: (Expr -> String) -> Expr -> String
-exprsMapToLaTeX f (Sequence es) = concatMap f es
-exprsMapToLaTeX f e             = f e
+exprToLaTeX (Seq es)                    = concatMap exprToLaTeX es
+exprToLaTeX (Text s)                    = s
+exprToLaTeX (Bold e)                    = "\\textbf{" ++ exprToLaTeX e ++ "}"
+exprToLaTeX (Italic e)                  = "\\textit{" ++ exprToLaTeX e ++ "}"
+exprToLaTeX (Hyperlink (Text url) e)    = "\\href{" ++ url ++ "}{" ++ exprToLaTeX e ++ "}\n"
+exprToLaTeX (Image (Text url) e)        = "\\begin{figure}\n"
+                                            ++ "\\includegraphics{" ++ url ++ "}\n"
+                                            ++ "\\caption{" ++ exprToLaTeX e ++ "}\n"
+                                            ++ "\\end{figure}\n"
+exprToLaTeX (Hyperlink _ e)             = error "Hyperlink must have a text URL"
+exprToLaTeX (Image _ e)                 = error "Image must have a text URL"
+exprToLaTeX (Template _)                = error "Templates should be evaluated at this stage"
 
 exprToItem :: Expr -> String
 exprToItem e = "\\item " ++ exprToLaTeX e ++ "\n"
