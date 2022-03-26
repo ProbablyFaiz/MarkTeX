@@ -5,7 +5,6 @@ import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 
 import TemplateLang hiding ((++))
-import Templating.Parser
 import Text.Read (readMaybe)
 import Language.Haskell.Interpreter (loadModules)
 import GHC.IO (unsafePerformIO)
@@ -14,9 +13,21 @@ import Data.Foldable (foldrM, foldlM)
 import System.IO.Temp
 import GHC.IO.Handle
 import Control.Monad (unless)
+import Language
+import Data.Either
+
+type EvalResult = Either RootExpr Expr
+
+getExpr :: EvalResult -> Expr 
+getExpr (Right x) = x
+getExpr (Left x) = error ("Not an Expr: " ++ show x)
+
+getRootExpr :: EvalResult -> RootExpr 
+getRootExpr (Left x) = x
+getRootExpr (Right x) = Body x
 
 data GeneratorState = Error String | State {
-  outputText :: String,
+  returnVal :: EvalResult,
   documentSettings :: TData,
   fileImports :: [String],
   imports :: [String],
@@ -25,50 +36,94 @@ data GeneratorState = Error String | State {
 }
 
 initialState :: TData -> GeneratorState
-initialState idata = State {outputText="", documentSettings=M.empty, env=idata, fileImports=[], imports=[], importsQ=[]}
+initialState idata = State {returnVal = Left $ RootSeq [], documentSettings=M.empty, env=idata, fileImports=[], imports=[], importsQ=[]}
 
-evalTExpr :: TExpr -> TData -> IO GeneratorState
-evalTExpr expr idata = evalTExpr' expr (initialState idata)
+evalRootExpr :: RootExpr -> TData -> IO GeneratorState
+evalRootExpr expr idata = evalRootExpr' expr (initialState idata)
 
-evalTExpr' :: TExpr -> GeneratorState -> IO GeneratorState
-evalTExpr' _ (Error str) = return $ Error str
-evalTExpr' (Seq exprs) gs = foldrM evalTExpr' gs (reverse exprs)
-evalTExpr' (Text str)  gs@State {outputText=currText} = return gs{outputText=currText ++ str}
-evalTExpr' (Command str) gs = do
+evalRootExpr' :: RootExpr -> GeneratorState -> IO GeneratorState
+evalRootExpr' _ (Error str) = return $ Error str
+evalRootExpr' (RootSeq exprs) gs = evalRootExprsSeq (Left . RootSeq) exprs gs
+evalRootExpr' (OrderedList exprs) gs = evalExprsSeq (Left . OrderedList) exprs gs
+evalRootExpr' (UnorderedList exprs) gs = evalExprsSeq (Left . UnorderedList) exprs gs
+evalRootExpr' (Heading x expr) gs = evalExprInside (Left . Heading x) expr gs
+evalRootExpr' (Body expr) gs      = evalExprInside (Left . Body) expr gs
+evalRootExpr' NewLine gs          = return gs{returnVal = Left NewLine}
+evalRootExpr' (TemplateBlock str expr) gs = do
     result <- interpretCommand str gs;
     case result of
       (Left err)          -> return $ Error (show err);
-      (Right metaCommand) -> evalMetaCommand metaCommand gs;
-evalTExpr' (Block str expr) gs = do
-    result <- interpretCommand str gs;
-    case result of
-      (Left err)          -> return $ Error (show err);
-      (Right (While b))   -> if toBool b then evalTExpr' expr gs >>= evalTExpr' (Block str expr) else return gs
+      (Right (While b))   -> if toBool b then evalRootExpr' expr gs >>= evalRootExpr' (TemplateBlock str expr) else return gs
       (Right metaCommand) -> evalMetaBlock metaCommand expr gs;
+
+evalExpr' ::  Expr -> GeneratorState -> IO GeneratorState
+evalExpr' _ (Error str) = return $ Error str
+evalExpr' (Seq exprs) gs = evalExprsSeq (Right . Seq) exprs gs
+evalExpr' (Text str) gs = return gs{returnVal = Right $ Text str}
+evalExpr' (Bold expr) gs   = evalExprInside (Right . Bold) expr gs
+evalExpr' (Italic expr) gs = evalExprInside (Right . Italic) expr gs
+evalExpr' (Hyperlink e1 e2) gs = evalExprInsideBi (\e1' e2' -> Right $ Hyperlink e1' e2') e1 e2 gs
+evalExpr' (Image e1 e2) gs = evalExprInsideBi (\e1' e2' -> Right $ Image e1' e2') e1 e2 gs
+evalExpr' (Template str) gs = do
+  result <- interpretCommand str gs;
+  case result of
+    (Left err)          -> return $ Error (show err)
+    (Right metaCommand) -> evalMetaCommand metaCommand gs
+
+evalExprInside :: (Expr -> EvalResult) -> Expr -> GeneratorState -> IO GeneratorState
+evalExprInside f expr gs = do
+  next_gs <- evalExpr' expr gs;
+  return next_gs{returnVal = f $ getExpr $ returnVal next_gs};
+
+evalExprInsideBi :: (Expr -> Expr -> EvalResult) -> Expr -> Expr -> GeneratorState -> IO GeneratorState
+evalExprInsideBi f expr1 expr2 gs = do
+  next_gs <- evalExpr' expr1 gs;
+  next_next_gs <- evalExpr' expr2 gs;
+  return next_next_gs{returnVal = f (getExpr $ returnVal next_gs) (getExpr $ returnVal next_next_gs)}
+
+evalRootExprsSeq :: ([RootExpr] -> EvalResult) -> [RootExpr] -> GeneratorState -> IO GeneratorState
+evalRootExprsSeq f exprs gs = evalExprsSeq' f exprs [] gs where
+  evalExprsSeq' :: ([RootExpr] -> EvalResult) -> [RootExpr] -> [RootExpr] -> GeneratorState -> IO GeneratorState
+  evalExprsSeq' f es results (Error str) = return $ Error str
+  evalExprsSeq' f [] results gs = do
+    return gs{returnVal = f results}
+  evalExprsSeq' f (e : es) results gs = do
+    next_gs <- evalRootExpr' e gs;
+    evalExprsSeq' f es (results ++ [getRootExpr $ returnVal next_gs]) next_gs
+
+evalExprsSeq :: ([Expr] -> EvalResult) -> [Expr] -> GeneratorState -> IO GeneratorState
+evalExprsSeq f exprs gs = evalExprsSeq' f exprs [] gs where
+  evalExprsSeq' :: ([Expr] -> EvalResult) -> [Expr] -> [Expr] -> GeneratorState -> IO GeneratorState
+  evalExprsSeq' f es results (Error str) = return $ Error str
+  evalExprsSeq' f [] results gs = do
+    return gs{returnVal = f results}
+  evalExprsSeq' f (e : es) results gs = do
+    next_gs <- evalExpr' e gs;
+    evalExprsSeq' f es (results ++ [getExpr $ returnVal next_gs]) next_gs
 
 evalMetaCommand :: MetaCommand -> GeneratorState -> IO GeneratorState
 evalMetaCommand _ (Error str) = return $ Error str
-evalMetaCommand (Insert val) gs@State {outputText=currText} = return gs{outputText=currText ++ toString val}
-evalMetaCommand (InsertVar str) gs@State {outputText=currText, env=env}   = return $ gs{outputText=currText ++ toString (lookupTData str env)}
+evalMetaCommand (Insert val) gs@State {returnVal=ret} = return gs{returnVal = Right $ Text $ toString val}
+evalMetaCommand (InsertVar str) gs@State {returnVal=ret, env=env} = return $ gs{returnVal = Right $ Text $ toString (lookupTData str env)}
 evalMetaCommand (DocSetting str val) gs@State {documentSettings=settings} = return gs{documentSettings=M.insert str val settings}
 evalMetaCommand (DocSettings tdata) gs@State {documentSettings=settings}  = return gs{documentSettings=M.union tdata settings}
 evalMetaCommand (LoadHsFile str) gs       = return gs{fileImports=fileImports gs ++ [str]}
 evalMetaCommand (Import str) gs           = return gs{imports=imports gs ++ [str]}
 evalMetaCommand (ImportQ strMod strAs) gs = return gs{importsQ=importsQ gs ++ [(strMod, strAs)]}
-evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData} 
+evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData}
 evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
-evalMetaBlock :: MetaCommand -> TExpr -> GeneratorState -> IO GeneratorState
+evalMetaBlock :: MetaCommand -> RootExpr -> GeneratorState -> IO GeneratorState
 evalMetaBlock _ _ (Error str) = return $ Error str
-evalMetaBlock (If b)     expr   gs                = if toBool b then evalTExpr' expr gs else return gs
+evalMetaBlock (If b)     expr   gs                = if toBool b then evalRootExpr' expr gs else return gs
 evalMetaBlock (IfVar str) expr gs@State {env=env} = evalMetaBlock (If (lookupTData str env)) expr gs
 evalMetaBlock (For x val) expr gs                 = evalForEachList x (listFromTValue val) expr gs
 evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 
-evalForEachList :: String -> [TValue] -> TExpr -> GeneratorState -> IO GeneratorState
-evalForEachList x (v:vs) expr gs@State {env = oldData} =  
+evalForEachList :: String -> [TValue] -> RootExpr -> GeneratorState -> IO GeneratorState
+evalForEachList x (v:vs) expr gs@State {env = oldData} =
     let newData = M.insert x v oldData
-     in evalTExpr' expr gs {env = newData} >>= evalForEachList x vs expr
+     in evalRootExpr' expr gs {env = newData} >>= evalForEachList x vs expr
 evalForEachList _ _ _ gs = return gs
 
 listFromTValue :: TValue -> [TValue]
@@ -128,30 +183,15 @@ testData = M.fromList [
     TList [TString "S1", TString "S2"])
   ]
 
-testExpr :: TExpr
-testExpr = Seq [
-    Text "This is some test input\n",
-    Block "tIf (get \"doesntexist\")" (Text "Not shown because variable doesn't exist\n"),
-    Block "tIfNot (get \"doesntexist\")" (Text "Shown because we negate it\n"),
-    Block "tIf (get \"Price\" > 10)" (Text "More than 10"),
-    Block "tIf True" (Text "True"),
-    Text "\n",
-    Block "IfVar \"product.name\"" (Seq [Text "Productname exists!: ", Command "InsertVar \"product.name\""]),
-    Command "Insert (get \"Strings\" ++ [\"S3\"])"
-    
-    -- Testing the SetVar/For/While Metacommands
-    ,
-    Command "SetVar \"date\" (toTValue \"2021-01-01\")",
-    Command "InsertVar \"date\"",
-    Block "For \"x\" (get \"Strings\")" (Seq [Text "Value in the for loop: ", Command "InsertVar \"x\"", Text "\n"]),
-    Block "tFor \"x\" ([1, 2, 3, 10] :: [Int])" (Command "tInsert (get \"x\")"),
-    Command "SetVar \"i\" (toTValue (1 :: Integer))",
-    Block "tWhile (get \"i\" < 5)" (Seq [Text "Value of i: ", Command "InsertVar \"i\"", Text "\n", Command "SetVar \"i\" (get \"i\" + 1)"])
+testExpr :: RootExpr 
+testExpr = RootSeq [
+    Body $ Text "This is an initial test!",
+    TemplateBlock "tIf (get \"product.name\")" (Body $ Text "Product name exists!")
   ]
 
 runGeneratorTest :: IO ()
 runGeneratorTest = do
-  gs <- evalTExpr testExpr testData;
+  gs <- evalRootExpr testExpr testData;
   case gs of
     Error s              -> print s
-    State {outputText=s} -> print s
+    State {returnVal=s} -> print (show s)
