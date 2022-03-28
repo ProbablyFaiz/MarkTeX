@@ -1,6 +1,7 @@
-module LatexGenerator (documentToLaTeX) where
+module LatexGenerator (documentToLatex) where
 
-import Language
+import Language (Expr(..), RootExpr(..))
+import TemplateLang (TData)
 
 -- Definition of document and such temporarily here
 
@@ -15,8 +16,8 @@ exampleDocument = RootSeq [Heading 0 head1, body1, Heading 1 head1_1, body1_1, H
     head2 = Seq [Text "This is ", Italic (Text "Heading 2")]
     body2 = Seq [Text "Link to Google:", Hyperlink (Text "https://www.google.com/") (Text "Google")]
 
-documentToLaTeX :: RootExpr -> String
-documentToLaTeX re =
+documentToLatex :: RootExpr -> TData -> String
+documentToLatex re docSettings =
   "\\documentclass[12pt]{article}\n"
     ++ "\\usepackage{hyperref}\n"
     ++ "\\begin{document}\n"

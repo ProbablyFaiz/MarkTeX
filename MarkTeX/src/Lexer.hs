@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "Lexer.x" #-}
+{-# LINE 1 "MarkTeX/src/Lexer.x" #-}
 module Lexer (main, alexScanTokens) where
 
 import Language
@@ -10992,7 +10992,7 @@ alex_actions = array (0 :: Int, 24)
   , (0,alex_action_9)
   ]
 
-{-# LINE 30 "Lexer.x" #-}
+{-# LINE 30 "MarkTeX/src/Lexer.x" #-}
 main = do
   s <- getContents
   print s

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -w #-}
-module Parser (main, parseTokens) where
+module Parser (main, parseTokens, parseMd) where
 
 import Language
 import Lexer (alexScanTokens)
