@@ -53,7 +53,12 @@ evalRootExpr' (TemplateBlock str expr) gs = do
     result <- interpretCommand str gs;
     case result of
       (Left err)          -> return $ Error (show err);
-      (Right (While b))   -> if toBool b then evalRootExpr' expr gs >>= evalRootExpr' (TemplateBlock str expr) else return gs
+      (Right (While b))   -> 
+        if toBool b 
+          then do gs'  <- evalRootExpr' expr gs
+                  gs'' <- evalRootExpr' (TemplateBlock str expr) gs'
+                  return gs'' {returnVal = combineResults (returnVal gs') (returnVal gs'')}
+          else return gs
       (Right metaCommand) -> evalMetaBlock metaCommand expr gs;
 
 evalExpr' ::  Expr -> GeneratorState -> IO GeneratorState
@@ -110,7 +115,7 @@ evalMetaCommand (DocSettings tdata) gs@State {documentSettings=settings}  = retu
 evalMetaCommand (LoadHsFile str) gs       = return gs{fileImports=fileImports gs ++ [str]}
 evalMetaCommand (Import str) gs           = return gs{imports=imports gs ++ [str]}
 evalMetaCommand (ImportQ strMod strAs) gs = return gs{importsQ=importsQ gs ++ [(strMod, strAs)]}
-evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData}
+evalMetaCommand (SetVar x val) gs@State {env = oldData} = let newData = M.insert x val oldData in return gs {env = newData, returnVal = Right $ Seq []}
 evalMetaCommand _ _ = return $ Error "Input is not a metacommand"
 
 evalMetaBlock :: MetaCommand -> RootExpr -> GeneratorState -> IO GeneratorState
@@ -123,12 +128,28 @@ evalMetaBlock _ _ _ = return $ Error "Input is not a metablock"
 evalForEachList :: String -> [TValue] -> RootExpr -> GeneratorState -> IO GeneratorState
 evalForEachList x (v:vs) expr gs@State {env = oldData} =
     let newData = M.insert x v oldData
-     in evalRootExpr' expr gs {env = newData} >>= evalForEachList x vs expr
+     in do gs'  <- evalRootExpr' expr gs {env = newData}
+           gs'' <- evalForEachList x vs expr gs'
+           return gs'' {returnVal = combineResults (returnVal gs') (returnVal gs'')}
 evalForEachList _ _ _ gs = return gs
 
 listFromTValue :: TValue -> [TValue]
 listFromTValue (TList xs) = xs
 listFromTValue tVal       = [tVal]
+
+combineResults :: EvalResult -> EvalResult -> EvalResult
+combineResults (Left (RootSeq v1)) (Left (RootSeq v2)) = Left $ RootSeq (v1 ++ v2)
+combineResults (Left (RootSeq v1)) (Left v2)           = Left $ RootSeq (v1 ++ [v2])
+combineResults (Left v1)           (Left (RootSeq v2)) = Left $ RootSeq (v1 : v2)
+combineResults (Left v1)           (Left v2)           = Left $ RootSeq [v1, v2]
+combineResults (Right v1)          (Left (RootSeq v2)) = Left $ RootSeq $ Body v1 : v2
+combineResults (Right v1)          (Left v2)           = Left $ RootSeq [Body v1, v2]
+combineResults (Left (RootSeq v1)) (Right v2)          = Left $ RootSeq (v1 ++ [Body v2])
+combineResults (Left v1)           (Right v2)          = Left $ RootSeq [v1, Body v2]
+combineResults (Right (Seq v1))    (Right (Seq v2))    = Right $ Seq (v1 ++ v2)
+combineResults (Right (Seq v1))    (Right v2)          = Right $ Seq (v1 ++ [v2])
+combineResults (Right v1)          (Right (Seq v2))    = Right $ Seq (v1 : v2)
+combineResults (Right v1)          (Right v2)          = Right $ Seq [v1, v2]
 
 interpretCommand :: String -> GeneratorState -> IO (Either I.InterpreterError MetaCommand)
 interpretCommand _ (Error str) = error str
@@ -187,6 +208,14 @@ testExpr :: RootExpr
 testExpr = RootSeq [
     Body $ Text "This is an initial test!",
     TemplateBlock "tIf (get \"product.name\")" (Body $ Text "Product name exists!")
+  ]
+
+testExpr2 :: RootExpr
+testExpr2 = RootSeq [
+    TemplateBlock "tFor \"x\" ([1, 2, 3, 10] :: [Int])" (Body $ Template "tInsert (get \"x\")")
+    , 
+    Body $ Template "SetVar \"m\" 0"
+    , TemplateBlock "tWhile (get \"m\" < 5)" (RootSeq [Body $ Template "tInsert (get \"m\")", Body $ Template "SetVar \"m\" (get \"m\" + 1)"])
   ]
 
 runGeneratorTest :: IO ()

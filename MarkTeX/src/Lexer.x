@@ -11,7 +11,7 @@ $digit = 0-9			-- digits
 $text = [a-zA-z0-9\#\?\.\:\;\?\,\"\!\$\(\)\/]		-- text characters
 
 tokens :-
-  ^"#"{1,5}" "    { \s -> THeading $ length s }
+  ^"#"{1,5}" "    { \s -> THeading $ length s - 1 }
   \*\*            { \s -> TBoldDelimiter }
   \*              { \s -> TItalicDelimiter }
   \(\"            { \s -> TLHyperlink }

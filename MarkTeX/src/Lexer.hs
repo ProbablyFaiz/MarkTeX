@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
 {-# LANGUAGE CPP #-}
-{-# LINE 1 "MarkTeX/src/Lexer.x" #-}
+{-# LINE 1 "Lexer.x" #-}
 module Lexer (main, alexScanTokens) where
 
 import Language
@@ -10992,12 +10992,12 @@ alex_actions = array (0 :: Int, 24)
   , (0,alex_action_9)
   ]
 
-{-# LINE 30 "MarkTeX/src/Lexer.x" #-}
+{-# LINE 30 "Lexer.x" #-}
 main = do
   s <- getContents
   print s
   print (alexScanTokens s)
-alex_action_0 = \s -> THeading $ length s
+alex_action_0 = \s -> THeading $ length s - 1
 alex_action_1 = \s -> TBoldDelimiter
 alex_action_2 = \s -> TItalicDelimiter
 alex_action_3 = \s -> TLHyperlink

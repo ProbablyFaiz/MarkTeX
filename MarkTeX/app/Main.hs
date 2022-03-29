@@ -26,7 +26,7 @@ main = do
 
     -- Parse Markdown string into RootExpr AST
     let rootExpr = parseMd inputMd
-
+    --print rootExpr
     -- Evaluate the template parts in the AST
     let initData = M.empty -- Optionally read json or something instead of empty map
     generatedState <- evalRootExpr rootExpr initData

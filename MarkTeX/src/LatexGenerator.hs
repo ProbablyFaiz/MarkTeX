@@ -20,6 +20,7 @@ documentToLatex :: RootExpr -> TData -> String
 documentToLatex re docSettings =
   "\\documentclass[12pt]{article}\n"
     ++ "\\usepackage{hyperref}\n"
+    ++ "\\usepackage{graphicx}\n"
     ++ "\\begin{document}\n"
     ++ rootExprToLaTeX re
     ++ "\\end{document}\n"
@@ -40,15 +41,16 @@ rootExprToLaTeX NewLine = "\n"
 rootExprToLaTeX (TemplateBlock _ _) = error "TemplateBlocks should be evaluated at this stage"
 
 repeatList :: Int -> [a] -> [a]
-repeatList n = concat . replicate n
+repeatList n | n >= 1 && n <= 5 = concat . replicate (n - 1)
+             | otherwise        = error "Invalid heading number!"
 
 exprToLaTeX :: Expr -> String
 exprToLaTeX (Seq es) = concatMap exprToLaTeX es
 exprToLaTeX (Text s) = s
 exprToLaTeX (Bold e) = "\\textbf{" ++ exprToLaTeX e ++ "}"
 exprToLaTeX (Italic e) = "\\textit{" ++ exprToLaTeX e ++ "}"
-exprToLaTeX (Hyperlink (Text url) e) = "\\href{" ++ url ++ "}{" ++ exprToLaTeX e ++ "}\n"
-exprToLaTeX (Image (Text url) e) =
+exprToLaTeX (Hyperlink e (Text url)) = "\\href{" ++ url ++ "}{" ++ exprToLaTeX e ++ "}"
+exprToLaTeX (Image e (Text url)) =
   "\\begin{figure}\n"
     ++ "\\includegraphics{"
     ++ url
@@ -57,8 +59,8 @@ exprToLaTeX (Image (Text url) e) =
     ++ exprToLaTeX e
     ++ "}\n"
     ++ "\\end{figure}\n"
-exprToLaTeX (Hyperlink _ e) = error "Hyperlink must have a text URL"
-exprToLaTeX (Image _ e) = error "Image must have a text URL"
+exprToLaTeX (Hyperlink _ _) = error "Hyperlink must have a text URL"
+exprToLaTeX (Image _ _) = error "Image must have a text URL"
 exprToLaTeX (Template _) = error "Templates should be evaluated at this stage"
 
 exprToItem :: Expr -> String
