@@ -37,6 +37,7 @@ data Information = Information {
 data Error = MetaCommandError String
            | LookupError String
            | InterpreterError I.InterpreterError
+           | ExpectedWhile String
     deriving (Show)
 
 -- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
@@ -196,7 +197,7 @@ evalMetaBlock :: MetaCommand -> RootExpr -> String -> Eval RootExpr'
 evalMetaBlock (If b)      e _   = evalIf (toBool b) e
 evalMetaBlock (IfVar str) e _   = lookupTValue str >>= \b -> evalIf (toBool b) e
 evalMetaBlock (For x val) e _   = RootSeq' <$> evalForList x (toListTValue val) e
-evalMetaBlock (While b)   e cmd = evalWhile (toBool b) e cmd
+evalMetaBlock (While b)   e str = RootSeq' <$> evalWhile (toBool b) e str
 evalMetaBlock m           _ _   = raiseError $ MetaCommandError $ 
                                                 "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
 
@@ -229,10 +230,13 @@ evalForList str xs e = traverse setVarAndEval xs
         setVarAndEval x = evalMetaCommand (SetVar str x) *> evalRootExpr e
 
 -- | `evalWhile` keeps evaluating the given expression while the template string keeps evaluating to true.
-evalWhile :: Bool -> RootExpr -> String -> Eval RootExpr'
-evalWhile True  e str = (\x y -> RootSeq' [x, y]) <$> evalRootExpr e <*> evalRootExpr (TemplateBlock str e)
-evalWhile False _ _   = pure emptyRootExpr
--- possibly flatten all RootSeq' s ?
+evalWhile :: Bool -> RootExpr -> String -> Eval [RootExpr']
+evalWhile False _ _   = pure []
+evalWhile True  e str = (:) <$> evalRootExpr e <*> (evalTemplate str >>= continueWhile)
+    where 
+        continueWhile :: MetaCommand -> Eval [RootExpr']
+        continueWhile (While b) = evalWhile (toBool b) e str
+        continueWhile m         = pure [] <$ raiseError $ ExpectedWhile $ "The template evaluated to a While metacommand in a previous iteration, but in this iteration the template evaluated to: " ++ show m
 
 -- | `evalTemplate` defines how to interpret a template string inside the `Eval` datatype.
 evalTemplate :: String -> Eval MetaCommand
