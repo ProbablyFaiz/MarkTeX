@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 58f7d2edc654caa4327f3faf4f1dd4ebf71d36f8b337c522d68bd0d1cd98e093
+-- hash: 5bec6b9089b1bb950fb691ed60571dd7065f31dfabc221f3a778485ba97f0772
 
 name:           MarkTeX
 version:        0.1.0.0
@@ -31,6 +31,7 @@ library
       Lexer
       Parser
       PdfGenerator
+      ReadJson
       Templating.Generator
       Templating.Parser
   other-modules:

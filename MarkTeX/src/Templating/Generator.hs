@@ -168,6 +168,7 @@ runEvaluation e d = let (Eval f) = evalRootExpr e in f (State d emptySettings)
 -- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
 -- For the subexpressions `Expr` it calls the `evalExpr` function.
 -- When a `TemplateBlock` is encountered the template string is evaluated and the `evalMetaBlock` function is called with the resulting `MetaCommand`.
+-- Other constructors can be mapped to the `RootExpr'` datatype directly, where possibly subexpressions have to be evaluated first of course.
 evalRootExpr :: RootExpr -> Eval RootExpr'
 evalRootExpr (Heading n e)         = Heading' n <$> evalExpr e
 evalRootExpr (Body e)              = Body' <$> evalExpr e
@@ -179,6 +180,7 @@ evalRootExpr (RootSeq es)          = RootSeq' <$> traverse evalRootExpr es
 
 -- | The `evalExpr` function says what computation to do for evaluating the different `Expr` expressions.
 -- When a `Template` is encountered the template string is evaluated and the `evalMetaCommand` function is called with the resulting `MetaCommand`.
+-- Other constructors can be mapped to the `Expr'` datatype directly, where possibly subexpressions have to be evaluated first of course.
 evalExpr :: Expr -> Eval Expr'
 evalExpr (Seq es)          = Seq' <$> traverse evalExpr es
 evalExpr (Text s)          = pure (Text' s)

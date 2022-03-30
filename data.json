@@ -1,0 +1,20 @@
+{
+    "name": "User",
+    "id": 1232642424,
+    "age": null,
+    "tags": ["new", "it"],
+    "devices": [
+        {
+            "name": "comp1",
+            "online": true
+        },
+        {
+            "name": "comp2",
+            "online": false
+        },
+        {
+            "name": "comp3",
+            "online": true
+        }
+    ]
+}
