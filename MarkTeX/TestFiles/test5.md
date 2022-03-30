@@ -3,11 +3,10 @@
 Some [formatting *inside* text]("http://google.com") and **bold??? please**
 
 {% tFor "x" ([1, 2, 3, 10] :: [Int]) %}
-{{ tInsert (get "x")}}
-Can I do one more line? This *one* has *too*. say times whuut
+- Can I do one more line? This *one* has *too*. say {{ tInsert (get "x")}} times whuut
 {% end %}
 
-Let's render an image: ![]("./badluckbrian.png")
+Let's render an image: ![]("./image.png")
 
 {{ SetVar "m" 0 }}
 
@@ -17,6 +16,8 @@ Let's render an image: ![]("./badluckbrian.png")
 {{ SetVar "m" (get "m" + 1) }}
 
 {% end %}
+
+$$ a^2 = b^2 + c^2 $$
 
 It's the lists:
 - Test

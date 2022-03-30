@@ -5,8 +5,6 @@
 - read json data from file (done for the most part)
 - option to generate md/latex/pdf based on user-input/doc-setting
 - usage of doc-settings/imports
-- dot notation -> works!
-
 
 
 - tables if nothing else to do, but may be difficult

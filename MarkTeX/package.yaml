@@ -27,6 +27,14 @@ dependencies:
 - process == 1.*
 - array
 
+- bytestring
+- unordered-containers
+- text
+- vector
+- scientific
+- aeson
+- split
+
 library:
   source-dirs: src
   dependencies:

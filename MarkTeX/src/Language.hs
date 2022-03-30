@@ -38,3 +38,21 @@ data Expr
   | Template String
   deriving (Show, Eq)
 
+data RootExpr'
+  = Heading' Int Expr'
+  | Body' Expr'
+  | OrderedList' [Expr']
+  | UnorderedList' [Expr']
+  | NewLine'
+  | RootSeq' [RootExpr']
+  deriving (Show, Eq)
+
+data Expr'
+  = Seq' [Expr']
+  | Text' String
+  | Bold' Expr'
+  | Italic' Expr'
+  | Hyperlink' Expr' Expr'
+  | Image' Expr' Expr'
+  deriving (Show, Eq)
+

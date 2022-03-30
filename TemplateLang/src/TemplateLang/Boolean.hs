@@ -21,10 +21,23 @@ not = P.not . toBool
 instance ToBool Bool where
   toBool = id
 
+-- instance ToBool Int where
+--   toBool = (/=) 0 
+
+-- instance ToBool Integer where
+--   toBool = (/=) 0 
+
+-- instance ToBool Float where
+--   toBool = (/=) 0 
+
+-- instance ToBool [a] where
+--   toBool [] = True
+--   toBool _  = False
+
 instance ToBool TValue where
-  toBool (TString str) = str /= ""
-  toBool (TNumber num) = num /= 0
+  toBool (TString str) = str /= "" --toBool str
+  toBool (TNumber num) = num /= 0  --toBool num
   toBool (TBool bool)  = bool
-  toBool (TList xs)    = not (null xs)
+  toBool (TList xs)    = not (null xs) --toBool xs
   toBool (TData dat)   = M.size dat > 0
   toBool TNull         = False
