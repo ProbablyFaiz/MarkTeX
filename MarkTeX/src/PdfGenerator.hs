@@ -3,7 +3,7 @@
 -- The `documentToLatex` and `latexToPdf` functions perform the intermediate steps of converting a `RootExpr` to a latex string and converting a latex file to a pdf file respectively.
 module PdfGenerator (documentToPdf, latexToPdf, documentToLatex) where
 
-import Language (RootExpr)
+import Language (RootExpr')
 import LatexGenerator (documentToLatex)
 import TemplateLang (TData)
 
@@ -11,7 +11,7 @@ import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)
 
 -- | The `documentToPdf` function takes a `RootExpr` together with certain document settings in a `TData` format and converts it to a pdf file.
-documentToPdf :: RootExpr -> TData -> FilePath -> IO ()
+documentToPdf :: RootExpr' -> TData -> FilePath -> IO ()
 documentToPdf rootExpr docSettings pdfFileName = do
 
     -- File name for intermediate tex state

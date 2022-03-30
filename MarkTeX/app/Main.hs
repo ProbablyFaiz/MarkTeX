@@ -1,14 +1,13 @@
 module Main where
 
 import Parser (parseMd)
-import PdfGenerator (documentToPdf)
-import Language (RootExpr(..))
-import Templating.Generator (GeneratorState(..), getRootExpr, evalRootExpr)
 
 import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
 import System.Environment (getArgs)
 
+import Templating.Generator2
+import PdfGenerator2
 
 -- | The `main` function takes a markdown file and converts it to a pdf file.
 -- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.
@@ -29,19 +28,15 @@ main = do
     --print rootExpr
     -- Evaluate the template parts in the AST
     let initData = M.empty -- Optionally read json or something instead of empty map
-    generatedState <- evalRootExpr rootExpr initData
+    --generatedState <- evalRootExpr rootExpr initData
 
-    -- Continue based on success of the generator state
-    case generatedState of
-        -- On error return that it failed to evaluate the template parts
-        Error err -> do
-            error $ "Evaluating the templates in the markdown file failed with the following error message:\n"
-                     ++ show err
-        -- On success continue with the returned state
-        st@State {returnVal = evaluatedExpr, documentSettings = docSettings} -> do
-            putStrLn "Evaluated the templates in the markdown file successfully!"
-            let documentExpr = getRootExpr evaluatedExpr
-            documentToPdf documentExpr docSettings pdfFileName
+    (State env info, evalResult) <- runEvaluation rootExpr initData
+
+    case evalResult of
+        Left err -> print err
+        Right rootexpr -> do
+           putStrLn "Evaluated the templates in the markdown file successfully!"
+           documentToPdf rootexpr (docSettings info) pdfFileName
 
 -- | This function `handleArgs` determines whether a valid amount of arguments is passed to the `MarkTeX` executable.
 -- It expects two arguments, an input file name of a markdown file and an output file name of the pdf file, where the markdown is converted to pdf format.
