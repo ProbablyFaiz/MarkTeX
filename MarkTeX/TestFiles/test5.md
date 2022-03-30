@@ -3,11 +3,10 @@
 Some [formatting *inside* text]("http://google.com") and **bold??? please**
 
 {% tFor "x" ([1, 2, 3, 10] :: [Int]) %}
-{{ tInsert (get "x")}}
-Can I do one more line? This *one* has *too*. say times whuut
+- Can I do one more line? This *one* has *too*. say {{ tInsert (get "x")}} times whuut
 {% end %}
 
-Let's render an image: ![]("./badluckbrian.png")
+Let's render an image: ![]("./image.png")
 
 {{ SetVar "m" 0 }}
 
