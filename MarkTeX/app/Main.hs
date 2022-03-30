@@ -6,8 +6,8 @@ import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
 import System.Environment (getArgs)
 
-import Templating.Generator2
-import PdfGenerator2
+import Templating.Generator (runEvaluation, Information(..), State(..))
+import PdfGenerator (documentToPdf)
 
 -- | The `main` function takes a markdown file and converts it to a pdf file.
 -- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.

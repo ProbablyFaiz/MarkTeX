@@ -5,16 +5,12 @@ import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 
 import TemplateLang hiding ((++))
-import Text.Read (readMaybe)
-import Language.Haskell.Interpreter (loadModules)
-import GHC.IO (unsafePerformIO)
-import Data.Bifunctor
-import Data.Foldable (foldrM, foldlM)
-import System.IO.Temp
-import GHC.IO.Handle
+import Data.Bifunctor (Bifunctor(..))
+import System.IO.Temp (withTempFile)
+import GHC.IO.Handle (hClose, hFlushAll, hIsReadable, hIsWritable, hPutStr)
+import Language (Expr(..), Expr'(..), RootExpr(..), RootExpr'(..))
+import Data.Either ()
 import Control.Monad (unless)
-import Language
-import Data.Either
 
 
 ----- Types & Instances -----
