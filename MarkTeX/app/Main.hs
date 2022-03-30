@@ -8,6 +8,7 @@ import System.Environment (getArgs)
 
 import Templating.Generator (runEvaluation, Information(..), State(..))
 import PdfGenerator (documentToPdf)
+import ReadJson (readJson) 
 
 -- | The `main` function takes a markdown file and converts it to a pdf file.
 -- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.
@@ -25,18 +26,19 @@ main = do
 
     -- Parse Markdown string into RootExpr AST
     let rootExpr = parseMd inputMd
-    --print rootExpr
+    
     -- Evaluate the template parts in the AST
-    let initData = M.empty -- Optionally read json or something instead of empty map
-    --generatedState <- evalRootExpr rootExpr initData
-
-    (State env info, evalResult) <- runEvaluation rootExpr initData
-
-    case evalResult of
+    jsonData <- readJson "data.json"    
+    case jsonData of
         Left err -> print err
-        Right rootexpr -> do
-           putStrLn "Evaluated the templates in the markdown file successfully!"
-           documentToPdf rootexpr (docSettings info) pdfFileName
+        Right tdata -> do
+            (State env info, evalResult) <- runEvaluation rootExpr tdata
+            case evalResult of
+                Left err -> print err
+                Right rootexpr -> do
+                    putStrLn "Evaluated the templates in the markdown file successfully!"
+                    documentToPdf rootexpr (docSettings info) pdfFileName
+                    print tdata
 
 -- | This function `handleArgs` determines whether a valid amount of arguments is passed to the `MarkTeX` executable.
 -- It expects two arguments, an input file name of a markdown file and an output file name of the pdf file, where the markdown is converted to pdf format.

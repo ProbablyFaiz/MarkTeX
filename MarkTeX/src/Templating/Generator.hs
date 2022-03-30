@@ -12,6 +12,7 @@ import Language (Expr(..), Expr'(..), RootExpr(..), RootExpr'(..))
 import Data.Either ()
 import Control.Monad (unless)
 
+import Templating.ParseLookup (parseLookup, nestedLookup, NestedLookup, Lookup(..)) 
 
 ----- Types & Instances -----
 
@@ -36,8 +37,9 @@ data Information = Information {
 -- | The `Error` datatype contains the different kinds of errors which can occur while evaluating the templates.
 data Error = MetaCommandError String
            | LookupError String
-           | InterpreterError I.InterpreterError
            | ExpectedWhile String
+           | ParseKeyError String
+           | InterpreterError I.InterpreterError
     deriving (Show)
 
 -- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
@@ -76,86 +78,6 @@ instance Monad Eval where
                 Right v' -> do
                     let (Eval k) = h v'
                     k s'
-            
-
------ Helper functions for interacting with the state information -----
-
-
--- | The function `lookupTValue` looks up the value for the given key in the environment data.
-lookupTValue :: String -> Eval TValue
-lookupTValue k = Eval $
-    \s@(State env _) ->
-        case M.lookup k env of
-            Nothing -> return (s, Left $ LookupError $ "Could not find a value for the key " ++ show k ++ " in the environment data!")
-            Just v  -> return (s, Right v)
-
--- | The function `insertTValue` inserts a value for a the given key into the environment data.
-insertTValue :: String -> TValue -> Eval ()
-insertTValue k v = Eval $
-    \(State env info) ->
-        let newenv = M.insert k v env
-        in return (State newenv info, Right ())
-
--- | The `insertSetting` function adds a document setting to the current document settings.
-insertSetting :: String -> TValue -> Eval ()
-insertSetting k v = Eval $
-    \(State env info@Information{docSettings = docSettings}) ->
-        let newDocSettings = M.insert k v docSettings
-        in return (State env info{docSettings = newDocSettings}, Right ())
-
--- | The `insertSettings` function adds a map of document settings to the current document settings.
-insertSettings :: TData -> Eval ()
-insertSettings newData = Eval $
-    \(State env info@Information{docSettings = docSettings}) ->
-        let newDocSettings = docSettings `M.union` newData
-        in return (State env info{docSettings = newDocSettings}, Right ())
-
--- | The function `addFileImport` is used to add a file to import to the current import list.
-addFileImport :: String -> Eval ()
-addFileImport str = Eval $
-    \(State env info@Information{fileImports = fileImports}) ->
-        return (State env info{fileImports = fileImports ++ [str]}, Right ())
-
--- | Add an import statement
-addImport :: String -> Eval ()
-addImport str = Eval $
-    \(State env info@Information{imports = imports}) ->
-        return (State env info{imports = imports ++ [str]}, Right ())
-
--- | Add a qualified import statement
-addQImport :: String -> String -> Eval ()
-addQImport strMod strAs = Eval $
-    \(State env info@Information{importsQ = importsQ}) ->
-        return (State env info{importsQ = importsQ ++ [(strMod, strAs)]}, Right ())
-
--- | This `raiseError` puts any error of the `Error` datatype as the current result.
--- Because of the applicative definition of the `Eval` datatype no more computations will be done and this error will be returned as the final result. 
-raiseError :: Error -> Eval a
-raiseError err = Eval $ \s -> return (s, Left err)
-
--- | When an action does not return an expression, an empty expression is returned
-emptyExpr :: Expr'
-emptyExpr = Seq' []
-
-emptyRootExpr :: RootExpr'
-emptyRootExpr = RootSeq' []
-
--- | This state is the initial empty state, which contains no data yet
-emptyState :: State
-emptyState = State M.empty emptySettings
-
--- | Empty settings used for initializing an empty state
-emptySettings :: Information
-emptySettings = Information { docSettings = M.empty
-                            , fileImports = []
-                            , imports = []
-                            , importsQ = []
-                            }
-
--- | toListTValue
-toListTValue :: TValue -> [TValue]
-toListTValue (TList xs) = xs
-toListTValue t          = [t]
 
 
 ----- Main functionality -----
@@ -164,7 +86,12 @@ toListTValue t          = [t]
 -- | The function `runEvaluation` evaluates the MarkDown AST with templates to a MarkDown AST without templates.
 -- First it determines the computation to run on the given expression, and then it runs this computation on the given data.
 runEvaluation :: RootExpr -> TData -> IO (State, Either Error RootExpr')
-runEvaluation e d = let (Eval f) = evalRootExpr e in f (State d emptySettings)
+runEvaluation e d = 
+    let (Eval evaluation) = cleanExpr <$> evalRootExpr e
+     in evaluation (State d emptySettings)
+
+cleanExpr :: RootExpr' -> RootExpr'
+cleanExpr = id -- TODO
 
 -- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
 -- For the subexpressions `Expr` it calls the `evalExpr` function.
@@ -193,18 +120,19 @@ evalExpr (Template str)    = evalTemplate str >>= evalMetaCommand
 
 -- | The `evalMetaBlock` function evaluates the metacommands which expect a `RootExpr` expression inside this block.
 -- When a 'simple' metacommand is encountered an error is raised.
+-- The third argument is the template string, which is needed to keep evaluating in the while loop.
 evalMetaBlock :: MetaCommand -> RootExpr -> String -> Eval RootExpr'
 evalMetaBlock (If b)      e _   = evalIf (toBool b) e
 evalMetaBlock (IfVar str) e _   = lookupTValue str >>= \b -> evalIf (toBool b) e
 evalMetaBlock (For x val) e _   = RootSeq' <$> evalForList x (toListTValue val) e
 evalMetaBlock (While b)   e str = RootSeq' <$> evalWhile (toBool b) e str
 evalMetaBlock m           _ _   = raiseError $ MetaCommandError $ 
-                                                "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
+    "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
 
 -- | The `evalMetaCommand` function evaluates the simple metacommands.
 -- When the argument is a metablock an error is raised.
 evalMetaCommand :: MetaCommand -> Eval Expr'
-evalMetaCommand (Insert val)           = pure $ (Text' . toString) val
+evalMetaCommand (Insert val)           = pure $ Text' (toString val)
 evalMetaCommand (InsertVar str)        = Text' . toString <$> lookupTValue str
 evalMetaCommand (DocSetting str val)   = emptyExpr <$ insertSetting str val
 evalMetaCommand (DocSettings tdata)    = emptyExpr <$ insertSettings tdata
@@ -213,7 +141,7 @@ evalMetaCommand (Import str)           = emptyExpr <$ addImport str
 evalMetaCommand (ImportQ strMod strAs) = emptyExpr <$ addQImport strMod strAs
 evalMetaCommand (SetVar str val)       = emptyExpr <$ insertTValue str val
 evalMetaCommand m                      = raiseError $ MetaCommandError $ 
-                                                        "Input is not a simple metacommand!\nReceived the following metacommand:\n" ++ show m
+    "Input is not a simple metacommand!\nReceived the following metacommand:\n" ++ show m
 
 -- | `evalIf` evaluates the given expression based on the interpreted condition.
 -- If the condition is false, it return an empty root expression.
@@ -236,7 +164,8 @@ evalWhile True  e str = (:) <$> evalRootExpr e <*> (evalTemplate str >>= continu
     where 
         continueWhile :: MetaCommand -> Eval [RootExpr']
         continueWhile (While b) = evalWhile (toBool b) e str
-        continueWhile m         = pure [] <$ raiseError $ ExpectedWhile $ "The template evaluated to a While metacommand in a previous iteration, but in this iteration the template evaluated to: " ++ show m
+        continueWhile m         = pure [] <$ raiseError $ ExpectedWhile $ 
+            "The template evaluated to a While metacommand in a previous iteration, but in this iteration the template evaluated to: " ++ show m
 
 -- | `evalTemplate` defines how to interpret a template string inside the `Eval` datatype.
 evalTemplate :: String -> Eval MetaCommand
@@ -289,3 +218,89 @@ interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info
             "env = " ++ show dat ++ "\r\n" ++
             "get :: P.String -> TValue" ++ "\r\n" ++
             "get s = lookupTData s env \r\n"
+            
+
+----- Helper functions for interacting with the state -----
+
+-- | The function `lookupTValue` looks up the value for the given key in the environment data.
+lookupTValue :: String -> Eval TValue
+lookupTValue k = Eval $
+    \s@(State env _) ->
+        case parseLookup k of
+            Left () -> return (s, Left $ ParseKeyError $ "Could not correctly parse the lookup path \"" ++ show k ++ "\"!")
+            Right lookups -> return (s, case nestedLookup k lookups env of
+                    Left errMsg -> Left $ LookupError errMsg
+                    Right tVal  -> Right tVal
+                )
+
+-- | The function `insertTValue` inserts a value for a the given key into the environment data.
+insertTValue :: String -> TValue -> Eval ()
+insertTValue k v = Eval $
+    \(State env info) ->
+        let newenv = M.insert k v env
+        in return (State newenv info, Right ())
+
+-- | The `insertSetting` function adds a document setting to the current document settings.
+insertSetting :: String -> TValue -> Eval ()
+insertSetting k v = Eval $
+    \(State env info@Information{docSettings = docSettings}) ->
+        let newDocSettings = M.insert k v docSettings
+        in return (State env info{docSettings = newDocSettings}, Right ())
+
+-- | The `insertSettings` function adds a map of document settings to the current document settings.
+insertSettings :: TData -> Eval ()
+insertSettings newData = Eval $
+    \(State env info@Information{docSettings = docSettings}) ->
+        let newDocSettings = docSettings `M.union` newData
+        in return (State env info{docSettings = newDocSettings}, Right ())
+
+-- | The function `addFileImport` is used to add a file to import to the current import list.
+addFileImport :: String -> Eval ()
+addFileImport str = Eval $
+    \(State env info@Information{fileImports = fileImports}) ->
+        return (State env info{fileImports = fileImports ++ [str]}, Right ())
+
+-- | Add an import statement
+addImport :: String -> Eval ()
+addImport str = Eval $
+    \(State env info@Information{imports = imports}) ->
+        return (State env info{imports = imports ++ [str]}, Right ())
+
+-- | Add a qualified import statement
+addQImport :: String -> String -> Eval ()
+addQImport strMod strAs = Eval $
+    \(State env info@Information{importsQ = importsQ}) ->
+        return (State env info{importsQ = importsQ ++ [(strMod, strAs)]}, Right ())
+
+
+----- Helper functions for raising an error and retrieving a TValue list, together with some empty data states -----
+
+
+-- | This `raiseError` puts any error of the `Error` datatype as the current result.
+-- Because of the applicative definition of the `Eval` datatype no more computations will be done and this error will be returned as the final result. 
+raiseError :: Error -> Eval a
+raiseError err = Eval $ \s -> return (s, Left err)
+
+-- | toListTValue
+toListTValue :: TValue -> [TValue]
+toListTValue (TList xs) = xs
+toListTValue t          = [t]
+
+-- | When an action does not return an expression, an empty expression is returned
+emptyExpr :: Expr'
+emptyExpr = Seq' []
+
+emptyRootExpr :: RootExpr'
+emptyRootExpr = RootSeq' []
+
+-- | This state is the initial empty state, which contains no data yet
+emptyState :: State
+emptyState = State M.empty emptySettings
+
+-- | Empty settings used for initializing an empty state
+emptySettings :: Information
+emptySettings = Information { docSettings = M.empty
+                            , fileImports = []
+                            , imports = []
+                            , importsQ = []
+                            }
