@@ -17,6 +17,8 @@ Let's render an image: ![]("./image.png")
 
 {% end %}
 
+$$ a^2 = b^2 + c^2 $$
+
 It's the lists:
 - Test
 - Second item. Formatting *on* lists should work now.

@@ -1,3 +1,5 @@
+module ReadJson (readJson) where
+
 import Data.Aeson (eitherDecode, encode, decode, Object(..), Value(..))
 
 import qualified Data.ByteString.Lazy.Char8 as BS

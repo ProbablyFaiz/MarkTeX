@@ -21,7 +21,7 @@ data MetaCommand = If TValue | IfVar String |
 
 tIf :: (ToTValue a) => a -> MetaCommand
 tIf = If . toTValue
-
+ 
 tIfNot :: (ToTValue a) => a -> MetaCommand
 tIfNot = If . toTValue . not . toTValue 
 

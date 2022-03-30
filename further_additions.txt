@@ -4,7 +4,7 @@
     - latex shortcuts -> color/pagenumbers/page of contents etc
 - read json data from file (done for the most part)
 - option to generate md/latex/pdf based on user-input/doc-setting
-
+- usage of doc-settings/imports
 
 
 

@@ -198,7 +198,7 @@ evalMetaBlock (IfVar str) e _   = lookupTValue str >>= \b -> evalIf (toBool b) e
 evalMetaBlock (For x val) e _   = RootSeq' <$> evalForList x (toListTValue val) e
 evalMetaBlock (While b)   e cmd = evalWhile (toBool b) e cmd
 evalMetaBlock m           _ _   = raiseError $ MetaCommandError $ 
-                                                        "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
+                                                "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
 
 -- | The `evalMetaCommand` function evaluates the simple metacommands.
 -- When the argument is a metablock an error is raised.
