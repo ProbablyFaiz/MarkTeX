@@ -12,8 +12,6 @@ import Language (Expr(..), Expr'(..), RootExpr(..), RootExpr'(..))
 import Data.Either ()
 import Control.Monad (unless)
 
-import Templating.ParseLookup (parseLookup, nestedLookup, NestedLookup, Lookup(..)) 
-
 ----- Types & Instances -----
 
 
@@ -34,17 +32,17 @@ data Information = Information {
 }
     deriving (Show)
 
--- | The `Error` datatype contains the different kinds of errors which can occur while evaluating the templates.
-data Error = MetaCommandError String
-           | LookupError String
-           | ExpectedWhile String
-           | ParseKeyError String
-           | InterpreterError I.InterpreterError
+-- | The `EvaluationError` datatype contains the different kinds of errors which can occur while evaluating the templates.
+data EvaluationError = MetaCommandError String
+                     | LookupError String
+                     | ExpectedWhile String
+                     | ParseKeyError String
+                     | InterpreterError I.InterpreterError
     deriving (Show)
 
 -- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
 -- The evaluation will either result in an `Error` or it will succesfully evaluate an expression such as `Expr'` or `RootExpr'`.
-newtype Eval a = Eval (State -> IO (State, Either Error a))
+newtype Eval a = Eval (State -> IO (State, Either EvaluationError a))
 
 -- Functor, Applicative and Monad instances of the `Eval` datatype.
 instance Functor Eval where
@@ -85,7 +83,7 @@ instance Monad Eval where
 
 -- | The function `runEvaluation` evaluates the MarkDown AST with templates to a MarkDown AST without templates.
 -- First it determines the computation to run on the given expression, and then it runs this computation on the given data.
-runEvaluation :: RootExpr -> TData -> IO (State, Either Error RootExpr')
+runEvaluation :: RootExpr -> TData -> IO (State, Either EvaluationError RootExpr')
 runEvaluation e d = 
     let (Eval evaluation) = cleanExpr <$> evalRootExpr e
      in evaluation (State d emptySettings)
@@ -123,7 +121,7 @@ evalExpr (Template str)    = evalTemplate str >>= evalMetaCommand
 -- The third argument is the template string, which is needed to keep evaluating in the while loop.
 evalMetaBlock :: MetaCommand -> RootExpr -> String -> Eval RootExpr'
 evalMetaBlock (If b)      e _   = evalIf (toBool b) e
-evalMetaBlock (IfVar str) e _   = lookupTValue str >>= \b -> evalIf (toBool b) e
+evalMetaBlock (IfVar str) e _   = evalLookupTValue str >>= \b -> evalIf (toBool b) e
 evalMetaBlock (For x val) e _   = RootSeq' <$> evalForList x (toListTValue val) e
 evalMetaBlock (While b)   e str = RootSeq' <$> evalWhile (toBool b) e str
 evalMetaBlock m           _ _   = raiseError $ MetaCommandError $ 
@@ -133,7 +131,7 @@ evalMetaBlock m           _ _   = raiseError $ MetaCommandError $
 -- When the argument is a metablock an error is raised.
 evalMetaCommand :: MetaCommand -> Eval Expr'
 evalMetaCommand (Insert val)           = pure $ Text' (toString val)
-evalMetaCommand (InsertVar str)        = Text' . toString <$> lookupTValue str
+evalMetaCommand (InsertVar str)        = Text' . toString <$> evalLookupTValue str
 evalMetaCommand (DocSetting str val)   = emptyExpr <$ insertSetting str val
 evalMetaCommand (DocSettings tdata)    = emptyExpr <$ insertSettings tdata
 evalMetaCommand (LoadHsFile str)       = emptyExpr <$ addFileImport str
@@ -223,15 +221,12 @@ interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info
 ----- Helper functions for interacting with the state -----
 
 -- | The function `lookupTValue` looks up the value for the given key in the environment data.
-lookupTValue :: String -> Eval TValue
-lookupTValue k = Eval $
+evalLookupTValue :: String -> Eval TValue
+evalLookupTValue k = Eval $
     \s@(State env _) ->
         case parseLookup k of
-            Left () -> return (s, Left $ ParseKeyError $ "Could not correctly parse the lookup path \"" ++ show k ++ "\"!")
-            Right lookups -> return (s, case nestedLookup k lookups env of
-                    Left errMsg -> Left $ LookupError errMsg
-                    Right tVal  -> Right tVal
-                )
+            Left ()       -> return (s, Left $ ParseKeyError $ "Could not correctly parse the lookup path \"" ++ show k ++ "\"!")
+            Right lookups -> return (s, Right $ lookupsInTData lookups env)
 
 -- | The function `insertTValue` inserts a value for a the given key into the environment data.
 insertTValue :: String -> TValue -> Eval ()
@@ -278,7 +273,7 @@ addQImport strMod strAs = Eval $
 
 -- | This `raiseError` puts any error of the `Error` datatype as the current result.
 -- Because of the applicative definition of the `Eval` datatype no more computations will be done and this error will be returned as the final result. 
-raiseError :: Error -> Eval a
+raiseError :: EvaluationError -> Eval a
 raiseError err = Eval $ \s -> return (s, Left err)
 
 -- | toListTValue

@@ -1,12 +1,12 @@
-module Templating.ParseLookup (parseLookup, nestedLookup, NestedLookup, Lookup(..)) where
+module TemplateLang.ParseLookup (parseLookup, Lookup(..)) where
 
-import Control.Applicative
+import Control.Applicative ( Alternative(..) )
 
 import Data.Char (digitToInt)
 
 import GHC.Unicode (isDigit)
 
-import TemplateLang ( TValue(TList, TData), TData )
+import TemplateLang.Values
 import qualified Data.Map as M
 
 ----- Parser type definition -----
@@ -78,35 +78,6 @@ type Index = Int
 data Lookup = Name Name
             | Index Index
     deriving (Show)
-
-
------ Functions for doing the lookup -----
-
-nestedLookup :: String -> NestedLookup -> TData -> Either String TValue
-nestedLookup k lookups env = searchInTValue k lookups (TData env)
-
-searchInTValue :: String -> NestedLookup -> TValue -> Either String TValue
-searchInTValue k lookups tVal = case lookups of
-    []     -> Left $ "Could not find a value in the environment for the path \"" ++ show k ++ "\" in the environment data!\nThe path is most likely an empty string!"
-    [l]    -> lookupInTValue k l tVal
-    (l:ls) -> lookupInTValue k l tVal >>= searchInTValue k ls -- in the either monad
-
-lookupInTValue :: String -> Lookup -> TValue -> Either String TValue
-lookupInTValue k (Name x) val = 
-    case val of
-        (TData tdata) -> 
-            case M.lookup x tdata of
-                Nothing -> Left $ "Could not find a value in the environment for the path \"" ++ show k ++ "\" in the environment data!\nCould not find the key \"" ++ show x ++ "\" in the current TData map!"
-                Just v -> Right v
-        _ -> Left $ "Could not find a value in the environment for the path \"" ++ show k ++ "\" in the environment data!\nCould not find the key \"" ++ show x ++ "\", because the current value is not a TData map!" 
-lookupInTValue k (Index n) val = 
-    case val of
-        (TList vs) -> 
-            if n >= length vs
-                then Left $ "Could not find a value in the environment for the path \"" ++ show k ++ "\" in the environment data!\nThe specified index \"" ++ show n ++ "\" is out of bounds!"
-                else Right $ vs !! n
-        _ -> Left $ "Could not find a value in the environment for the path \"" ++ show k ++ "\" in the environment data!\nThe current value is indexed with the index \"" ++ show n ++ "\", but it is not a list!"
-
 
 ----- Parser for nested lookups ---
 

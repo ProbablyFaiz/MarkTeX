@@ -1,27 +1,23 @@
 -- | The module `PdfGenerator` contains utility functions to convert a MarkDown AST to a latex or pdf file.
 -- The `documentToPdf` function converts a `RootExpr` to a pdf file.
 -- The `documentToLatex` and `latexToPdf` functions perform the intermediate steps of converting a `RootExpr` to a latex string and converting a latex file to a pdf file respectively.
-module PdfGenerator (documentToPdf, latexToPdf, documentToLatex) where
+module PdfGenerator (documentToPdf, latexToPdf) where
 
 import Language (RootExpr')
-import LatexGenerator (documentToLatex)
 import TemplateLang (TData)
 
 import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)
 
 -- | The `documentToPdf` function takes a `RootExpr` together with certain document settings in a `TData` format and converts it to a pdf file.
-documentToPdf :: RootExpr' -> TData -> FilePath -> IO ()
-documentToPdf rootExpr docSettings pdfFileName = do
+documentToPdf :: String -> TData -> FilePath -> IO ()
+documentToPdf latexString docSettings pdfFileName = do
 
     -- File name for intermediate tex state
     let tempTexFile = "tempFile.tex"
 
-    -- Convert the RootExpr AST to a LaTeX string
-    let texString = documentToLatex rootExpr docSettings --TODO: docSettings are not supported yet
-
     -- Write the LaTeX to the intermediate file
-    writeFile tempTexFile texString
+    writeFile tempTexFile latexString
 
     -- Convert the latex file to a pdf file with pdflatex
     exitCode <- latexToPdf tempTexFile pdfFileName

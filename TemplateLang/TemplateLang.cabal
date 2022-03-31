@@ -31,6 +31,7 @@ library
       TemplateLang.Instances
       TemplateLang.List
       TemplateLang.Number
+      TemplateLang.ParseLookup
       TemplateLang.Values
   other-modules:
       Paths_TemplateLang

@@ -6,6 +6,7 @@ module TemplateLang (
         module TemplateLang.Values,
         module TemplateLang.Instances,
         module TemplateLang.Command,
+        module TemplateLang.ParseLookup,
         hidePreludeString
     ) where
 
@@ -16,6 +17,7 @@ import TemplateLang.Number
 import TemplateLang.Values
 import TemplateLang.Instances
 import TemplateLang.Command
+import TemplateLang.ParseLookup
 import Data.List
 
 hidePreludeString :: String

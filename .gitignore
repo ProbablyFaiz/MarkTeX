@@ -25,5 +25,5 @@ cabal.project.local~
 out
 .vscode/*
 */**/Lexer
-*/**/Parser 
-./image.png
+*/**/Parser
+image.png
