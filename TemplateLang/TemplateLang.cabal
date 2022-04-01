@@ -24,15 +24,15 @@ source-repository head
 
 library
   exposed-modules:
-      TemplateLang
-      TemplateLang.Boolean
-      TemplateLang.Command
-      TemplateLang.Data
-      TemplateLang.Instances
-      TemplateLang.List
-      TemplateLang.Number
-      TemplateLang.ParseLookup
-      TemplateLang.Values
+      MarkTeX.TemplateLang
+      MarkTeX.TemplateLang.Boolean
+      MarkTeX.TemplateLang.Command
+      MarkTeX.TemplateLang.Data
+      MarkTeX.TemplateLang.Instances
+      MarkTeX.TemplateLang.List
+      MarkTeX.TemplateLang.Number
+      MarkTeX.TemplateLang.ParseLookup
+      MarkTeX.TemplateLang.Values
   other-modules:
       Paths_TemplateLang
   hs-source-dirs:

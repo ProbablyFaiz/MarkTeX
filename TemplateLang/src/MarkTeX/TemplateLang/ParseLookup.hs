@@ -1,4 +1,4 @@
-module TemplateLang.ParseLookup (parseLookup, Lookup(..)) where
+module MarkTeX.TemplateLang.ParseLookup (parseLookup, Lookup(..)) where
 
 import Control.Applicative ( Alternative(..) )
 
@@ -6,7 +6,7 @@ import Data.Char (digitToInt)
 
 import GHC.Unicode (isDigit)
 
-import TemplateLang.Values
+import MarkTeX.TemplateLang.Values
 import qualified Data.Map as M
 
 ----- Parser type definition -----

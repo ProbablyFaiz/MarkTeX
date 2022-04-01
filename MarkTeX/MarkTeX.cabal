@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 376d5e68ac92401278dac8db127d55afa36aa4fd599a39d30361bd23c999e30c
+-- hash: fb052d897a6683ed8055de64c3b11c2f3bb9fb5f4bb25b2c18f8e0024f096066
 
 name:           MarkTeX
 version:        0.1.0.0
@@ -26,14 +26,15 @@ source-repository head
 
 library
   exposed-modules:
-      Language
-      LatexGenerator
-      Lexer
-      Parser
-      PdfGenerator
-      ReadJson
-      Templating.Generator
-      Templating.Parser
+      MarkTeX
+      MarkTeX.Evaluation.Expression
+      MarkTeX.Evaluation.LatexGenerator
+      MarkTeX.Evaluation.MetaEvaluator
+      MarkTeX.Parsing.Expression
+      MarkTeX.Parsing.Lexer
+      MarkTeX.Parsing.Parser
+      MarkTeX.PdfGenerator
+      MarkTeX.ReadJson
   other-modules:
       Paths_MarkTeX
   hs-source-dirs:

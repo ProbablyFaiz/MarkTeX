@@ -1,6 +1,6 @@
-module TemplateLang.Number where
+module MarkTeX.TemplateLang.Number where
 
-import TemplateLang.Values
+import MarkTeX.TemplateLang.Values
 
 import qualified Data.Map as M
 

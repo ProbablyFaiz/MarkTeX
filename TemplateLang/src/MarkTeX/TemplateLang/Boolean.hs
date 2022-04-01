@@ -1,6 +1,6 @@
-module TemplateLang.Boolean where
+module MarkTeX.TemplateLang.Boolean where
 
-import TemplateLang.Values
+import MarkTeX.TemplateLang.Values
 
 import qualified Prelude as P
 import Prelude hiding (not)

@@ -1,4 +1,4 @@
-module ReadJson (readJson) where
+module MarkTeX.ReadJson (readJson) where
 
 import Data.Aeson (eitherDecode, encode, decode, Object(..), Value(..))
 
@@ -9,7 +9,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Scientific as SC
 
-import TemplateLang
+import MarkTeX.TemplateLang
 
 data ReadJsonError = DecodeJson String
                    | ConvertJson String

@@ -1,11 +1,11 @@
-module TemplateLang.Data where
+module MarkTeX.TemplateLang.Data where
 
-import TemplateLang.Values
+import MarkTeX.TemplateLang.ParseLookup (parseLookup, Lookup(..))
+import MarkTeX.TemplateLang.Values
 
 import Data.List.Split
 import qualified Data.Map as M
 import Data.Maybe
-import TemplateLang.ParseLookup (parseLookup, Lookup(..))
 
 toMapMaybe :: TValue -> Maybe TData
 toMapMaybe (TData dat) = Just dat

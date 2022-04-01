@@ -5,9 +5,9 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE TypeOperators #-}
 
-module TemplateLang.List where
+module MarkTeX.TemplateLang.List where
 
-import TemplateLang.Values
+import MarkTeX.TemplateLang.Values
 
 import GHC.Exts
 import qualified Prelude as P

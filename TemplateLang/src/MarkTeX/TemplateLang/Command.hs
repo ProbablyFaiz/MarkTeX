@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RankNTypes #-}
-module TemplateLang.Command where
+module MarkTeX.TemplateLang.Command where
 
-import TemplateLang.Values
-import TemplateLang.Boolean
+import MarkTeX.TemplateLang.Values
+import MarkTeX.TemplateLang.Boolean
 
 import Data.Bifunctor
 import Data.Data (Typeable)
@@ -16,6 +16,7 @@ data MetaCommand = If TValue | IfVar String |
   DocSetting String TValue | DocSettings TData |
   -- ImportQ = ModuleName QualifiedName
   LoadHsFile String | Import String | ImportQ String String |
+  Include String | IncludeWith String TData | 
   SetVar String TValue | For String TValue | While TValue
   deriving (Read, Show, Typeable)
 

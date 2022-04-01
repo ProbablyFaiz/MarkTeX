@@ -1,8 +1,8 @@
 {
-module Parser (main, parseTokens, parseMd) where
+module MarkTeX.Parsing.Parser (main, parseTokens, parseMd) where
 
-import Language
-import Lexer (alexScanTokens)
+import MarkTeX.Parsing.Expression
+import MarkTeX.Parsing.Lexer (alexScanTokens)
 }
 
 %name parseTokens
@@ -17,9 +17,9 @@ import Lexer (alexScanTokens)
     "\n"        { TNewLine }
     "- "        { TUnorderedItemStart }
     "n. "       { TOrderedItemStart }
-    templ       { TTemplate $$ }
-    tblockstart { TTemplateBlockStart $$ }
-    tblockend   { TTemplateBlockEnd }
+    templ       { TCommand $$ }
+    tblockstart { TCommandBlockStart $$ }
+    tblockend   { TCommandBlockEnd }
     "!["        { TImageStart }
     "["         { TLBracket }
     "]"         { TRBracket }
@@ -36,7 +36,7 @@ import Lexer (alexScanTokens)
 %%
 
 RootExpr : heading Expr { Heading $1 $2 }
-         | tblockstart RootExpr tblockend %prec COMMAND { TemplateBlock $1 $2 }
+         | tblockstart RootExpr tblockend %prec COMMAND { CommandBlockCode $1 $2 }
          | "- " Expr "\n" %prec DATA { UnorderedList [$2] }
          | "n. " Expr "\n" %prec DATA { OrderedList [$2] }
          | Expr { Body $1 }
@@ -52,7 +52,7 @@ Expr : "**" SafeExpr "**" %prec FORMAT { Bold $2 }
      | Expr Expr %prec CONCAT { Seq [$1, $2] }
 
 SafeExpr : text %prec DATA { Text $1 }
-          | templ %prec COMMAND { Template $1 }
+          | templ %prec COMMAND { CommandCode $1 }
           | SafeExpr SafeExpr %prec CONCAT { Seq [$1, $2] }
 {
 
@@ -65,7 +65,7 @@ optimizeRootExpr re = case re of
   RootSeq res -> RootSeq (concatRootExprs $ map optimizeRootExpr res)
   Body e -> Body (optimizeExpr e)
   Heading h e -> Heading h (optimizeExpr e)
-  TemplateBlock t e -> TemplateBlock t (optimizeRootExpr e)
+  CommandBlockCode t e -> CommandBlockCode t (optimizeRootExpr e)
   UnorderedList es -> UnorderedList (map optimizeExpr es)
   OrderedList es -> OrderedList (map optimizeExpr es)
   _ -> re

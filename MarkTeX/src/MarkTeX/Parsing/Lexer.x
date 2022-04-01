@@ -1,7 +1,7 @@
 {
-module Lexer (main, alexScanTokens) where
+module MarkTeX.Parsing.Lexer (main, alexScanTokens) where
 
-import Language
+import MarkTeX.Parsing.Expression
 }
 
 -- TODO: Rewrite as monadic w/ startcodes so hyperlinks, templates etc. can be much less hacky
@@ -19,9 +19,9 @@ tokens :-
   \!\[            { \s -> TImageStart }
   \[              { \s -> TLBracket }
   \]              { \s -> TRBracket }
-  "{{".+"}}"      { \s -> TTemplate (let s' = drop 2 s in take (length s' - 2) s') }
-  "{%" $white* "end" $white* "%}" { \s -> TTemplateBlockEnd }
-  "{%".+"%}"      { \s -> TTemplateBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
+  "{{".+"}}"      { \s -> TCommand (let s' = drop 2 s in take (length s' - 2) s') }
+  "{%" $white* "end" $white* "%}" { \s -> TCommandBlockEnd }
+  "{%".+"%}"      { \s -> TCommandBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
   ^"- "           { \s -> TUnorderedItemStart }
   ^$digit". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }

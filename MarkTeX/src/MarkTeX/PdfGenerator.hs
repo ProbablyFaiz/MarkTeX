@@ -1,10 +1,10 @@
 -- | The module `PdfGenerator` contains utility functions to convert a MarkDown AST to a latex or pdf file.
 -- The `documentToPdf` function converts a `RootExpr` to a pdf file.
 -- The `documentToLatex` and `latexToPdf` functions perform the intermediate steps of converting a `RootExpr` to a latex string and converting a latex file to a pdf file respectively.
-module PdfGenerator (documentToPdf, latexToPdf) where
+module MarkTeX.PdfGenerator (documentToPdf, latexToPdf) where
 
-import Language (RootExpr')
-import TemplateLang (TData)
+import MarkTeX.Evaluation.Expression (Expr)
+import MarkTeX.TemplateLang (TData)
 
 import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)

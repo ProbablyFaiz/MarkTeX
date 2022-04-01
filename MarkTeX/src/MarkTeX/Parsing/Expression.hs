@@ -1,4 +1,4 @@
-module Language where
+module MarkTeX.Parsing.Expression where
 
 data Token
   = THeading Int
@@ -12,9 +12,9 @@ data Token
   | TItalicDelimiter
   | TUnorderedItemStart
   | TOrderedItemStart
-  | TTemplate String
-  | TTemplateBlockStart String
-  | TTemplateBlockEnd
+  | TCommand String
+  | TCommandBlockStart String
+  | TCommandBlockEnd
   | TNewLine
   deriving (Show, Eq)
 
@@ -24,7 +24,7 @@ data RootExpr
   | OrderedList [Expr]
   | UnorderedList [Expr]
   | NewLine
-  | TemplateBlock String RootExpr
+  | CommandBlockCode String RootExpr
   | RootSeq [RootExpr]
   deriving (Show, Eq)
 
@@ -35,24 +35,7 @@ data Expr
   | Italic Expr
   | Hyperlink Expr Expr
   | Image Expr Expr
-  | Template String
+  | CommandCode String
   deriving (Show, Eq)
 
-data RootExpr'
-  = Heading' Int Expr'
-  | Body' Expr'
-  | OrderedList' [Expr']
-  | UnorderedList' [Expr']
-  | NewLine'
-  | RootSeq' [RootExpr']
-  deriving (Show, Eq)
-
-data Expr'
-  = Seq' [Expr']
-  | Text' String
-  | Bold' Expr'
-  | Italic' Expr'
-  | Hyperlink' Expr' Expr'
-  | Image' Expr' Expr'
-  deriving (Show, Eq)
 

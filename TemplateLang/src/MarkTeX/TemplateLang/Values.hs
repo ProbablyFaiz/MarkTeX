@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module TemplateLang.Values where
+module MarkTeX.TemplateLang.Values where
 
 import qualified Data.Map as M
 

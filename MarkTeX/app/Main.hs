@@ -4,11 +4,11 @@ import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
 import System.Environment (getArgs)
 
-import LatexGenerator (documentToLatex)
-import Parser (parseMd)
-import PdfGenerator (documentToPdf)
-import ReadJson (readJson) 
-import Templating.Generator (runEvaluation, Information(..), State(..))
+import MarkTeX.Parsing.Parser (parseMd)
+import MarkTeX.Evaluation.LatexGenerator (documentToLatex)
+import MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..))
+import MarkTeX.PdfGenerator (documentToPdf)
+import MarkTeX.ReadJson (readJson) 
 
 -- | The `main` function takes a markdown file and converts it to a pdf file.
 -- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.

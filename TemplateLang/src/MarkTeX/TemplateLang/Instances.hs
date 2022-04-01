@@ -1,7 +1,7 @@
-module TemplateLang.Instances where
+module MarkTeX.TemplateLang.Instances where
 
-import TemplateLang.Values
-import TemplateLang.Number
+import MarkTeX.TemplateLang.Values
+import MarkTeX.TemplateLang.Number
 
 import Data.Map as M
 
