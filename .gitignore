@@ -26,4 +26,6 @@ out
 .vscode/*
 */**/Lexer
 */**/Parser
-image.png
+*.png
+*.pdf
+*.tex

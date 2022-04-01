@@ -26,7 +26,7 @@ tokens :-
   ^$digit". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }
   $white          { \s -> TText s }
-  .               { \s -> TText s } -- This rule should really be . but doing this now for output readability
+  .               { \s -> TText s } -- TODO This rule should really be . but doing this now for output readability
 {
 
 main = do

@@ -18,6 +18,8 @@ data MetaCommand = If TValue | IfVar String |
   LoadHsFile String | Import String | ImportQ String String |
   Include String | IncludeWith String TData | 
   SetVar String TValue | For String TValue | While TValue
+  -- TODO add LateX commands (with options)
+  -- TODO add a nice shortcut function with the above for colors
   deriving (Read, Show, Typeable)
 
 tIf :: (ToTValue a) => a -> MetaCommand

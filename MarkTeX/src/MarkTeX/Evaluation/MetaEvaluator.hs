@@ -104,13 +104,13 @@ cleanExpr = id -- TODO
 -- When a `CommandBlockCode` is encountered the code string is evaluated and the `evalMetaBlock` function is called with the resulting `MetaCommand`.
 -- Other constructors can be mapped to the `EvalExpr` datatype directly, where possibly subexpressions have to be evaluated first of course.
 evalRootExpr :: P.RootExpr -> Eval E.Expr
-evalRootExpr (P.Heading n e)         = E.Heading n <$> evalExpr e
-evalRootExpr (P.Body e)              = evalExpr e
-evalRootExpr (P.OrderedList es)      = E.OrderedList <$> traverse evalExpr es
-evalRootExpr (P.UnorderedList es)    = E.UnorderedList <$> traverse evalExpr es
-evalRootExpr P.NewLine               = pure E.NewLine
+evalRootExpr (P.Heading n e)            = E.Heading n <$> evalExpr e
+evalRootExpr (P.Body e)                 = evalExpr e
+evalRootExpr (P.OrderedList es)         = E.OrderedList <$> traverse evalExpr es
+evalRootExpr (P.UnorderedList es)       = E.UnorderedList <$> traverse evalExpr es
+evalRootExpr P.NewLine                  = pure E.NewLine
 evalRootExpr (P.CommandBlockCode str e) = evalCommandCode str >>= \cmd -> evalMetaBlock cmd e str
-evalRootExpr (P.RootSeq es)          = E.Seq <$> traverse evalRootExpr es
+evalRootExpr (P.RootSeq es)             = E.Seq <$> traverse evalRootExpr es
 
 -- | The `evalExpr` function says what computation to do for evaluating the different `Expr` expressions.
 -- When a `CommandCode` is encountered the code string is evaluated and the `evalMetaCommand` function is called with the resulting `MetaCommand`.
@@ -122,7 +122,7 @@ evalExpr (P.Bold e)          = E.Bold <$> evalExpr e
 evalExpr (P.Italic e)        = E.Italic <$> evalExpr e
 evalExpr (P.Hyperlink e1 e2) = E.Hyperlink <$> evalExpr e1 <*> evalExpr e2
 evalExpr (P.Image e1 e2)     = E.Image <$> evalExpr e1 <*> evalExpr e2
-evalExpr (P.CommandCode str)    = evalCommandCode str >>= evalMetaCommand
+evalExpr (P.CommandCode str) = evalCommandCode str >>= evalMetaCommand
 
 -- | The `evalMetaBlock` function evaluates the metacommands which expect a `RootExpr` expression inside this block.
 -- When a 'simple' metacommand is encountered an error is raised.
@@ -192,7 +192,7 @@ evalInclude str dat = Eval $
         inputMd <- readFile filePath;
         let evalExpr = parseMd inputMd;
         let evalDat = fromMaybe env dat;
-        let newDir = takeDirectory filePath
+        let newDir = takeDirectory filePath;
         runEvaluation newDir evalExpr evalDat;
 
 -- | The `interpretCommand` function interprets the code string as a `MetaCommand` in the `IO` monad.
