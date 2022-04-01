@@ -3,6 +3,7 @@ module Main where
 import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
 import System.Environment (getArgs)
+import System.FilePath (takeDirectory)
 
 import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.Evaluation.LatexGenerator (documentToLatex)
@@ -33,7 +34,7 @@ main = do
         Left err -> print err --TODO handle error
         Right tdata -> do
             putStrLn "Read the json data!"
-            (State env info, evalResult) <- runEvaluation rootExpr tdata
+            (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
             case evalResult of
                 Left err -> print err --TODO handle error
                 Right rootExpr' -> do
@@ -52,6 +53,7 @@ main = do
 handleArgs :: [String] -> (FilePath, FilePath)
 handleArgs args = 
     let 
+        -- TODO Also allow the .json file to be entered here
         defaultFileNameMD  = "main.md"
         defaultFileNamePDF = "output"
     in

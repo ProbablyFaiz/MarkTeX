@@ -9,11 +9,12 @@ import MarkTeX.TemplateLang (TData)
 import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)
 
--- | The `documentToPdf` function takes a `RootExpr` together with certain document settings in a `TData` format and converts it to a pdf file.
+-- | The `documentToPdf` function takes a LateX `String` together with certain document settings in a `TData` format and converts it to a pdf file.
 documentToPdf :: String -> TData -> FilePath -> IO ()
 documentToPdf latexString docSettings pdfFileName = do
 
     -- File name for intermediate tex state
+    -- TODO: Make it actually temporary
     let tempTexFile = "tempFile.tex"
 
     -- Write the LaTeX to the intermediate file

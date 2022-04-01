@@ -11,6 +11,7 @@ import MarkTeX.Parsing.Parser (parseMd)
 
 import Data.Bifunctor (Bifunctor(..))
 import System.IO.Temp (withTempFile)
+import System.FilePath ((</>), takeDirectory)
 import GHC.IO.Handle (hClose, hFlushAll, hIsReadable, hIsWritable, hPutStr)
 import Data.Either (fromLeft)
 import Control.Monad (unless)
@@ -27,8 +28,11 @@ type Settings = TData
 data State = State Environment Information
     deriving (Show)
 
+type RelativeDir = FilePath
+
 -- | The `Information` datatype contains the meta information about import statements and document settings.
 data Information = Information {
+  relativeDir :: RelativeDir,
   docSettings :: Settings,
   fileImports :: [String],
   imports :: [String],
@@ -87,10 +91,10 @@ instance Monad Eval where
 
 -- | The function `runEvaluation` evaluates the MarkDown AST with templates to a MarkDown AST without templates.
 -- First it determines the computation to run on the given expression, and then it runs this computation on the given data.
-runEvaluation :: P.RootExpr -> TData -> IO (State, Either EvaluationError E.Expr)
-runEvaluation e d =
+runEvaluation :: RelativeDir -> P.RootExpr -> TData -> IO (State, Either EvaluationError E.Expr)
+runEvaluation dir e d =
     let (Eval evaluation) = cleanExpr <$> evalRootExpr e
-     in evaluation (State d emptySettings)
+     in evaluation (State d (emptySettings dir))
 
 cleanExpr :: E.Expr -> E.Expr
 cleanExpr = id -- TODO
@@ -184,10 +188,12 @@ evalCommandCode str = Eval $
 evalInclude :: String -> Maybe TData -> Eval E.Expr
 evalInclude str dat = Eval $
     \(State env info) -> do
-        inputMd <- readFile str;
+        let filePath = relativeDir info </> str
+        inputMd <- readFile filePath;
         let evalExpr = parseMd inputMd;
         let evalDat = fromMaybe env dat;
-        runEvaluation evalExpr evalDat;
+        let newDir = takeDirectory filePath
+        runEvaluation newDir evalExpr evalDat;
 
 -- | The `interpretCommand` function interprets the code string as a `MetaCommand` in the `IO` monad.
 -- The result is either a valid `MetaCommand` or an `InterpreterError` if the interpreter failed to interpret the code string.
@@ -199,7 +205,7 @@ interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info
 
         createInterpreter :: Information -> String -> String -> I.Interpreter MetaCommand
         createInterpreter info str path = do
-            I.loadModules (path : fileImports info)
+            I.loadModules (path : map (relativeDir info </>) (fileImports info))
             I.setTopLevelModules ("TEnv" : imports info)
             I.setImportsQ (("Prelude", Just "P") : map (second Just) (importsQ info))
             I.interpret str (I.as :: MetaCommand)
@@ -301,13 +307,14 @@ emptyExpr :: E.Expr
 emptyExpr = E.Seq []
 
 -- | This state is the initial empty state, which contains no data yet
-emptyState :: State
-emptyState = State M.empty emptySettings
+emptyState :: FilePath -> State
+emptyState relativeDir = State M.empty (emptySettings relativeDir)
 
 -- | Empty settings used for initializing an empty state
-emptySettings :: Information
-emptySettings = Information { docSettings = M.empty
+emptySettings :: FilePath -> Information
+emptySettings relativeDir = Information { docSettings = M.empty
                             , fileImports = []
                             , imports = []
                             , importsQ = []
+                            , relativeDir = relativeDir
                             }
