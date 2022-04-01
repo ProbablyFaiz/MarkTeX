@@ -117,17 +117,3 @@ traverseAndCollect f = fmap concat . traverse f
 sectionLevel :: Int -> ToLatex
 sectionLevel n | n >= 1 && n <= 5 = Right $ concat (replicate (n - 1) "sub") ++ "section"
                | otherwise        = Left  $ InvalidSectionLevel "Heading number is out of bounds!"
-
-
-
-
--- example document for testing
-exampleDocument :: Expr
-exampleDocument = Seq [Heading 1 head1, body1, Heading 2 head1_1, body1_1, Heading 1 head2, body2]
-  where
-    head1 = Bold (Text "Heading 1")
-    body1 = OrderedList [Italic (Text "Text in list")]
-    head1_1 = Italic (Text "Heading 1.1")
-    body1_1 = UnorderedList [Text "Text in list 1", Text "Text in list 2"]
-    head2 = Seq [Text "This is ", Italic (Text "Heading 2")]
-    body2 = Seq [Text "Link to Google:", Hyperlink (Text "https://www.google.com/") (Text "Google")]
