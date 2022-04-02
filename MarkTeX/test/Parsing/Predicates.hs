@@ -56,12 +56,12 @@ match (Right x)            (Right y) = x == y
 match x                    y         = False
 
 innerExprsRE :: RootExpr -> [AnyExpr]
-innerExprsRE (Heading _ e)           = [Left e]
+innerExprsRE (Heading i e)           = [Left $ Text (show i), Left e]
 innerExprsRE (Body e)                = [Left e]
 innerExprsRE (OrderedList es)        = map Left es
 innerExprsRE (UnorderedList es)      = map Left es
 innerExprsRE NewLine                 = []
-innerExprsRE (CommandBlockCode _ re) = [Right re]
+innerExprsRE (CommandBlockCode str re) = [Left $ Text str, Right re]
 innerExprsRE (RootSeq res)           = map Right res
 
 innerExprsE :: Expr -> [Expr]
