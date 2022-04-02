@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1001c30d34dd6127df08db2982829b3e45c7fb5a9a7071936e311c9ab5338b7e
+-- hash: be6b16ca11e02b58220ea7a2a379b077f135bff4b0e339e24ed33044c1e5194e
 
 name:           MarkTeX
 version:        0.1.0.0
@@ -91,6 +91,8 @@ test-suite MarkTeX-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Evaluation.Predicates
+      Evaluation.Tests
       Parsing.Predicates
       Parsing.Tests
       Paths_MarkTeX
