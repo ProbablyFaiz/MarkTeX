@@ -9,6 +9,7 @@ import MarkTeX.Parsing.Expression
 
 $digit = 0-9			-- digits
 $text = [a-zA-z0-9\#\?\.\:\;\?\,\"\!\$\(\)\/]		-- text characters
+$nontemplatetag = [^\%]
 
 tokens :-
   ^"#"{1,5}" "    { \s -> THeading $ length s - 1 }
@@ -21,7 +22,7 @@ tokens :-
   \]              { \s -> TRBracket }
   "{{".+"}}"      { \s -> TCommand (let s' = drop 2 s in take (length s' - 2) s') }
   "{%" $white* "end" $white* "%}" { \s -> TCommandBlockEnd }
-  "{%".+"%}"      { \s -> TCommandBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
+  "{%"$nontemplatetag+"%}"        { \s -> TCommandBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
   ^"- "           { \s -> TUnorderedItemStart }
   ^$digit+". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }

@@ -114,6 +114,6 @@ parseMd md = fixRootExpr $ parseTokens $ alexScanTokens md
 main = do
   s <- getContents
   print s
-  -- print $ alexScanTokens s
+  print $ alexScanTokens s
   print $ parseMd s
 }

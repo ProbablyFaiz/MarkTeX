@@ -25,7 +25,8 @@ parseTests = [
             ("Image", ContainsExpr (Image (Text "AltText") (Text "ImageUrl")))
         ], ParseTest "Code tags" "code_tags.md" [
             ("Simple command", ContainsExpr (CommandCode "SimpleCommand")),
-            ("Block command", ContainsRootExpr (CommandBlockCode "BlockCommand" emptyRootExpr))
+            ("Block command", ContainsRootExpr (CommandBlockCode "BlockCommand" emptyRootExpr)),
+            ("Inline block command", ContainsRootExpr (CommandBlockCode "BlockCommand2" emptyRootExpr))
         ], ParseTest "Lists" "lists.md" [
             ("Unordered", ContainsRootExpr (UnorderedList [Text "ULItem1", Text "ULItem2"])),
             ("Ordered", ContainsRootExpr (OrderedList [Text "OLItem1", Text "OLItem2"]))
