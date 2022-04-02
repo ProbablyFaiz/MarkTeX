@@ -36,6 +36,7 @@ dependencies:
 - scientific
 - aeson
 - split
+- directory
 
 library:
   source-dirs: src
