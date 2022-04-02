@@ -1,7 +1,9 @@
 module MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..)) where
 
 import MarkTeX.Evaluation.Expression (Expr(..))
-import MarkTeX.TemplateLang (TData)
+import MarkTeX.TemplateLang (TData, lookupTData)
+import MarkTeX.TemplateLang.Values (TValue(..))
+import GHC.IO (unsafePerformIO)
 
 
 ----- Data types -----
@@ -45,20 +47,28 @@ infixl 4 <++
 documentToLatex :: Expr -> TData -> ToLatex
 documentToLatex re docSettings =
   "\\documentclass[12pt]{article}\n"
+    ++ geometrySettings docSettings
     ++ "\\usepackage{hyperref}\n"
     ++ "\\usepackage{graphicx}\n"
     ++ "\\begin{document}\n"
     ++> exprToLaTeX re
     <++ "\\end{document}\n"
 
+
+geometrySettings :: TData -> String
+geometrySettings docSettings =
+  "\\usepackage["
+  ++ case lookupTData "geometrySettings" docSettings of TString s -> s ; _ -> "a4paper,margin=1in"
+  ++ "]{geometry}\n"
+
 -- | The `exprToLaTeX` function converts a `EvalExpr` into a LaTeX string.
 -- An error is raised if the url of a hyperlink or the path to an image is not in plain text.
 exprToLaTeX :: Expr -> ToLatex
-exprToLaTeX (Heading n e) = 
-  "\\" 
+exprToLaTeX (Heading n e) =
+  "\\"
     ++> sectionLevel n
-    <++ "{" 
-    <++> exprToLaTeX e 
+    <++ "{"
+    <++> exprToLaTeX e
     <++ "}"
 exprToLaTeX (OrderedList es) =
   "\\begin{enumerate}\n"
@@ -71,19 +81,19 @@ exprToLaTeX (UnorderedList es) =
 exprToLaTeX NewLine = pure "\n"
 exprToLaTeX (Seq es) = traverseAndCollect exprToLaTeX es
 exprToLaTeX (Text s) = pure s
-exprToLaTeX (Bold e) = 
+exprToLaTeX (Bold e) =
   "\\textbf{"
-    ++> exprToLaTeX e 
+    ++> exprToLaTeX e
     <++ "}"
-exprToLaTeX (Italic e) = 
+exprToLaTeX (Italic e) =
   "\\textit{"
-    ++> exprToLaTeX e 
+    ++> exprToLaTeX e
     <++ "}"
-exprToLaTeX (Hyperlink e (Text url)) = 
-  "\\href{" 
-    ++ url 
-    ++ "}{" 
-    ++> exprToLaTeX e 
+exprToLaTeX (Hyperlink e (Text url)) =
+  "\\href{"
+    ++ url
+    ++ "}{"
+    ++> exprToLaTeX e
     <++ "}"
 exprToLaTeX (Image e (Text url)) =
   "\\begin{figure}\n"

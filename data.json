@@ -2,6 +2,7 @@
     "meta": {
         "day": 1
     },
+    "geometrySettings": "a4paper,margin=1in",
     "name": "User",
     "id": 1232642424,
     "age": null,
