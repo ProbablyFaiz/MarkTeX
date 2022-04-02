@@ -1,0 +1,25 @@
+cradle:
+  stack:
+    - path: "MarkTeX/src"
+      component: "MarkTeX:lib"
+
+    - path: "MarkTeX/app/Main.hs"
+      component: "MarkTeX:exe:MarkTeX-exe"
+
+    - path: "MarkTeX/app/Paths_MarkTeX.hs"
+      component: "MarkTeX:exe:MarkTeX-exe"
+
+    - path: "MarkTeX/test"
+      component: "MarkTeX:test:MarkTeX-test"
+
+    - path: "TemplateLang/src"
+      component: "TemplateLang:lib"
+  
+  multi:
+    - path: ./Setup.hs
+      config:
+        cradle:
+          direct:
+            arguments:
+              - "-package Cabal"
+              - "-package base"
