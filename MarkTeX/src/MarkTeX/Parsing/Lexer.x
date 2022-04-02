@@ -23,7 +23,7 @@ tokens :-
   "{%" $white* "end" $white* "%}" { \s -> TCommandBlockEnd }
   "{%".+"%}"      { \s -> TCommandBlockStart (let s' = drop 2 s in take (length s' - 2) s') }
   ^"- "           { \s -> TUnorderedItemStart }
-  ^$digit". "     { \s -> TOrderedItemStart }
+  ^$digit+". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }
   $white          { \s -> TText s }
   .               { \s -> TText s } -- TODO This rule should really be . but doing this now for output readability
