@@ -1,7 +1,7 @@
 module MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..)) where
 
 import MarkTeX.Evaluation.Expression (Expr(..))
-import MarkTeX.TemplateLang (TData, lookupTData)
+import MarkTeX.TemplateLang (TData, lookupTData, toString)
 import MarkTeX.TemplateLang.Values (TValue(..))
 import GHC.IO (unsafePerformIO)
 
@@ -47,70 +47,76 @@ infixl 4 <++
 documentToLatex :: Expr -> TData -> ToLatex
 documentToLatex re docSettings =
   "\\documentclass[12pt]{article}\n"
-    ++ geometrySettings docSettings
+    ++ geometryConfig docSettings
     ++ "\\usepackage{hyperref}\n"
     ++ "\\usepackage{graphicx}\n"
+    ++ stringDocSetting "preambleStatements" docSettings ++ "\n"
     ++ "\\begin{document}\n"
-    ++> exprToLaTeX re
+    ++> exprToLaTeX docSettings re
     <++ "\\end{document}\n"
 
 
-geometrySettings :: TData -> String
-geometrySettings docSettings =
+stringDocSetting :: String -> TData -> String
+stringDocSetting setting docSettings = toString $ lookupTData setting docSettings
+
+geometryConfig :: TData -> String
+geometryConfig docSettings =
   "\\usepackage["
-  ++ case lookupTData "geometrySettings" docSettings of TString s -> s ; _ -> "a4paper,margin=1in"
+  ++ stringDocSetting "geometryConfig" docSettings
   ++ "]{geometry}\n"
 
 -- | The `exprToLaTeX` function converts a `EvalExpr` into a LaTeX string.
 -- An error is raised if the url of a hyperlink or the path to an image is not in plain text.
-exprToLaTeX :: Expr -> ToLatex
-exprToLaTeX (Heading n e) =
+exprToLaTeX :: TData -> Expr -> ToLatex
+exprToLaTeX ds (Heading n e) =
   "\\"
     ++> sectionLevel n
     <++ "{"
-    <++> exprToLaTeX e
+    <++> exprToLaTeX ds e
     <++ "}"
-exprToLaTeX (OrderedList es) =
+exprToLaTeX ds (OrderedList es) =
   "\\begin{enumerate}\n"
-    ++> traverseAndCollect exprToItem es
+    ++> traverseAndCollect (exprToItem ds) es
     <++ "\\end{enumerate}\n"
-exprToLaTeX (UnorderedList es) =
+exprToLaTeX ds (UnorderedList es) =
   "\\begin{itemize}\n"
-    ++> traverseAndCollect exprToItem es
+    ++> traverseAndCollect (exprToItem ds) es
     <++ "\\end{itemize}\n"
-exprToLaTeX NewLine = pure "\n"
-exprToLaTeX (Seq es) = traverseAndCollect exprToLaTeX es
-exprToLaTeX (Text s) = pure s
-exprToLaTeX (Bold e) =
+exprToLaTeX ds NewLine = pure "\n"
+exprToLaTeX ds (Seq es) = traverseAndCollect (exprToLaTeX ds) es
+exprToLaTeX ds (Text s) = pure s
+exprToLaTeX ds (Bold e) =
   "\\textbf{"
-    ++> exprToLaTeX e
+    ++> exprToLaTeX ds e
     <++ "}"
-exprToLaTeX (Italic e) =
+exprToLaTeX ds (Italic e) =
   "\\textit{"
-    ++> exprToLaTeX e
+    ++> exprToLaTeX ds e
     <++ "}"
-exprToLaTeX (Hyperlink e (Text url)) =
+exprToLaTeX ds (Hyperlink e (Text url)) =
   "\\href{"
     ++ url
     ++ "}{"
-    ++> exprToLaTeX e
+    ++> exprToLaTeX ds e
     <++ "}"
-exprToLaTeX (Image e (Text url)) =
+exprToLaTeX ds (Image e (Text url)) =
   "\\begin{figure}\n"
-    ++ "\\includegraphics{"
+    ++ "\\includegraphics["
+    ++ stringDocSetting "imageFormatConfig" ds
+    ++ "]{"
     ++ url
     ++ "}\n"
     ++ "\\caption{"
-    ++> exprToLaTeX e
+    ++> exprToLaTeX ds e
     <++ "}\n"
     ++ "\\end{figure}\n"
-exprToLaTeX (Hyperlink _ _) = Left $ ExpectedHyperlinkText "The url of a hyperlink should be given in plain text!"
-exprToLaTeX (Image     _ _) = Left $ ExpectedImageText     "The path to an image should be given in plain text!"
+exprToLaTeX ds (Hyperlink _ _) = Left $ ExpectedHyperlinkText "The url of a hyperlink should be given in plain text!"
+exprToLaTeX ds (Image     _ _) = Left $ ExpectedImageText     "The path to an image should be given in plain text!"
 
 -- | The function `exprToItem` converts the given expression to a LaTeX string.
 -- Then it makes an item for a ordered or unordered list from this string.
-exprToItem :: Expr -> ToLatex
-exprToItem e = "\\item " ++> exprToLaTeX e <++ "\n"
+exprToItem :: TData -> Expr -> ToLatex
+exprToItem ds e = "\\item " ++> exprToLaTeX ds e <++ "\n"
 
 
 ----- Small helper functions -----

@@ -2,7 +2,8 @@
     "meta": {
         "day": 1
     },
-    "geometrySettings": "a4paper,margin=1in",
+    "geometryConfig": "a4paper,margin=1in",
+    "imageFormatConfig": "width=\\textwidth",
     "name": "User",
     "id": 1232642424,
     "age": null,
