@@ -42,7 +42,7 @@ latexToPdf outputDir texFile pdfFile = system $ pdfLatexCommand outputDir texFil
                                                 " && " ++ mvOutputPdfCommand outputDir pdfFile
     where
         pdfLatexCommand :: FilePath -> FilePath -> FilePath -> String
-        pdfLatexCommand out tex pdf = "pdflatex -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex
+        pdfLatexCommand out tex pdf = "pdflatex -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex ++ " > /dev/null"
 
         mvOutputPdfCommand :: FilePath -> FilePath -> String
         mvOutputPdfCommand out pdf = let pdfPath = pdf ++ ".pdf" in "mv " ++ joinPath [out, pdfPath] ++ " " ++ pdfPath
