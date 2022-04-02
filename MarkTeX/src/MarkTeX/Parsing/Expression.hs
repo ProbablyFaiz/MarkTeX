@@ -1,4 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module MarkTeX.Parsing.Expression where
+import Data.Data (Data)
 
 data Token
   = THeading Int
@@ -26,7 +28,7 @@ data RootExpr
   | NewLine
   | CommandBlockCode String RootExpr
   | RootSeq [RootExpr]
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 data Expr
   = Seq [Expr]
@@ -36,6 +38,6 @@ data Expr
   | Hyperlink Expr Expr
   | Image Expr Expr
   | CommandCode String
-  deriving (Show, Eq)
+  deriving (Show, Eq, Data)
 
 
