@@ -93,6 +93,8 @@ test-suite MarkTeX-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
+      Evaluation.Predicates
+      Evaluation.Tests
       Parsing.Predicates
       Parsing.Tests
       Paths_MarkTeX
