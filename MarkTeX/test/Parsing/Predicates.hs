@@ -6,10 +6,11 @@ import Data.Either (rights, lefts)
 import Data.Bits (Bits(xor))
 
 type AnyExpr = Either Expr RootExpr
-type ParserPredicate = RootExpr -> Bool
+
+data ParserPredicate = ContainsExpr Expr | ContainsRootExpr RootExpr
 
 -- | Searches for a `RootExpr` in a `RootExpr`
-containsREPredicate :: RootExpr -> ParserPredicate
+containsREPredicate :: RootExpr -> RootExpr -> Bool
 containsREPredicate (RootSeq []) _ = True -- Empty RootSeq is used as a wildcard
 containsREPredicate x y = if toConstr x == toConstr y 
     -- Match contents or look further down the AST
@@ -18,20 +19,12 @@ containsREPredicate x y = if toConstr x == toConstr y
     -- If not the same constructor look further down the AST
     else any (containsREPredicate x) (rights (innerExprsRE y))
 
--- | Inverse of `containsREPredicate`
-notContainsREPredicate :: RootExpr -> ParserPredicate
-notContainsREPredicate x y = not (containsREPredicate x y)
-
 -- | Searches for an `Expr` in a `RootExpr`
-containsEPredicate :: Expr -> ParserPredicate
+containsEPredicate :: Expr -> RootExpr -> Bool
 containsEPredicate (Seq []) _ = True -- Empty Seq is used as a wildcard
 -- Recursively check this property in case of RootExpr, go to isExprInExpr when an Expr is encountered
 containsEPredicate x y = any (containsEPredicate x) (rights (innerExprsRE y)) ||
                          any (isExprInExpr x) (lefts (innerExprsRE y))
-
--- | Inverse of `containsEPredicate`
-notContainsEPredicate :: Expr -> ParserPredicate
-notContainsEPredicate x y = not (containsEPredicate x y)
 
 -- | Searches for an `Expr` in an `Expr`
 isExprInExpr :: Expr -> Expr -> Bool 

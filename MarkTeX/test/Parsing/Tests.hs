@@ -17,18 +17,18 @@ parserTests = testGroup "Parser" (map parseTestToTestTree parseTests)
 parseTests :: [ParseTest]
 parseTests = [
         ParseTest "Basic tags" "basic_tags.md" [
-            ("Bold", containsEPredicate (Bold (Text "Bold"))),
-            ("Italic", containsEPredicate (Italic (Text "Italic"))),
-            ("Header", containsREPredicate (Heading 1 (Text "Header"))),
-            ("Header2", containsREPredicate (Heading 2 (Text "Header2"))),
-            ("Hyperlink", containsEPredicate (Hyperlink (Text "LinkText") (Text "LinkUrl"))),
-            ("Image", containsEPredicate (Image (Text "AltText") (Text "ImageUrl")))
+            ("Bold", ContainsExpr (Bold (Text "Bold"))),
+            ("Italic", ContainsExpr (Italic (Text "Italic"))),
+            ("Header", ContainsRootExpr (Heading 1 (Text "Header"))),
+            ("Header2", ContainsRootExpr (Heading 2 (Text "Header2"))),
+            ("Hyperlink", ContainsExpr (Hyperlink (Text "LinkText") (Text "LinkUrl"))),
+            ("Image", ContainsExpr (Image (Text "AltText") (Text "ImageUrl")))
         ], ParseTest "Code tags" "code_tags.md" [
-            ("Simple command", containsEPredicate (CommandCode "SimpleCommand")),
-            ("Block command", containsREPredicate (CommandBlockCode "BlockCommand" emptyRootExpr))
+            ("Simple command", ContainsExpr (CommandCode "SimpleCommand")),
+            ("Block command", ContainsRootExpr (CommandBlockCode "BlockCommand" emptyRootExpr))
         ], ParseTest "Lists" "lists.md" [
-            ("Unordered", containsREPredicate (UnorderedList [Text "ULItem1", Text "ULItem2"])),
-            ("Ordered", containsREPredicate (OrderedList [Text "OLItem1", Text "OLItem2"]))
+            ("Unordered", ContainsRootExpr (UnorderedList [Text "ULItem1", Text "ULItem2"])),
+            ("Ordered", ContainsRootExpr (OrderedList [Text "OLItem1", Text "OLItem2"]))
         ]
     ]
 
@@ -36,8 +36,11 @@ parseTestToTestTree :: ParseTest -> TestTree
 parseTestToTestTree (ParseTest str file ps) = testGroup str tests where
     expr :: RootExpr
     expr = parseMd $ unsafePerformIO (readFile ("test/Parsing/inputs/" </> file))
+    testToAssertion :: ParserPredicate -> Assertion
+    testToAssertion (ContainsExpr e)     = assertBool ("Cannot find " ++ show e) (containsEPredicate e expr)
+    testToAssertion (ContainsRootExpr e) = assertBool ("Cannot find " ++ show e) (containsREPredicate e expr)
     tests :: [TestTree]
-    tests = map (\(str', p) -> testCase str' (True @=? p expr)) ps
+    tests = map (\(str', p) -> testCase str' (testToAssertion p)) ps
 
 emptyExpr :: Expr
 emptyExpr = Seq []
