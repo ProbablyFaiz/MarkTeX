@@ -28,6 +28,7 @@ library
       MarkTeX.TemplateLang.Boolean
       MarkTeX.TemplateLang.Command
       MarkTeX.TemplateLang.Data
+      MarkTeX.TemplateLang.Expression
       MarkTeX.TemplateLang.Instances
       MarkTeX.TemplateLang.List
       MarkTeX.TemplateLang.Number

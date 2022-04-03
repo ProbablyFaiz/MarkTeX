@@ -43,9 +43,8 @@
         - specific importing/exporting of functions/datatypes
         - commenting everything
 
-    - clean rootexpr
-        - the meta-evaluation of a while now for example generates a separate list for every iteration of the loop, while you probably want one list containing an item for each iteration
-        - find out why there are so many newlines in the generated latex? (not really a problem i think)
+    - the meta-evaluation of a while now for example generates a separate list for every iteration of the loop, while you probably want one list containing an item for each iteration
+    - find out why there are so many newlines in the generated latex? (not really a problem i think)
 
     - user options
         - choose whether to convert to md/latex/pdf may be nice (as an input argument to the program or a doc-setting?)

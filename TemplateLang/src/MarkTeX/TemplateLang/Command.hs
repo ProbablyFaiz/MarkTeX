@@ -10,9 +10,10 @@ import Data.Data (Typeable)
 import qualified Data.Map as M
 import qualified Prelude as P
 import Prelude hiding (not)
+import MarkTeX.TemplateLang.Expression
 
 data MetaCommand = If TValue | IfVar String | 
-  Insert TValue | InsertVar String | 
+  Insert TValue | InsertVar String | InsertExpr Expr |
   DocSetting String TValue | DocSettings TData |
   -- ImportQ = ModuleName QualifiedName
   LoadHsFile String | Import String | ImportQ String String |

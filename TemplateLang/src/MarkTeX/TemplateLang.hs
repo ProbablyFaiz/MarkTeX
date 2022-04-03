@@ -1,4 +1,5 @@
 module MarkTeX.TemplateLang (
+        module MarkTeX.TemplateLang.Expression,
         module MarkTeX.TemplateLang.Boolean,
         module MarkTeX.TemplateLang.List,
         module MarkTeX.TemplateLang.Data,
@@ -10,6 +11,7 @@ module MarkTeX.TemplateLang (
         hidePreludeString
     ) where
 
+import MarkTeX.TemplateLang.Expression
 import MarkTeX.TemplateLang.Boolean
 import MarkTeX.TemplateLang.List
 import MarkTeX.TemplateLang.Data

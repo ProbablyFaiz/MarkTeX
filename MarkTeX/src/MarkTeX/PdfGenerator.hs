@@ -3,8 +3,8 @@
 -- The `documentToLatex` and `latexToPdf` functions perform the intermediate steps of converting a `RootExpr` to a latex string and converting a latex file to a pdf file respectively.
 module MarkTeX.PdfGenerator (documentToPdf, latexToPdf) where
 
-import MarkTeX.Evaluation.Expression (Expr)
 import MarkTeX.TemplateLang (TData)
+import MarkTeX.TemplateLang.Expression (Expr)
 
 import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)

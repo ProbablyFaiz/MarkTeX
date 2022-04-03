@@ -1,6 +1,6 @@
 module Evaluation.Predicates where
 
-import MarkTeX.Evaluation.Expression
+import MarkTeX.TemplateLang.Expression
 import Data.Data (toConstr)
 
 data EvalPredicate = ContainsExpr Expr | NotContainsExpr Expr | ReturnsError

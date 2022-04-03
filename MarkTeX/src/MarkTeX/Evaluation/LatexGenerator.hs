@@ -1,7 +1,7 @@
 module MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..)) where
 
-import MarkTeX.Evaluation.Expression (Expr(..))
 import MarkTeX.TemplateLang (TData, lookupTData, toString)
+import MarkTeX.TemplateLang.Expression (Expr(..))
 import MarkTeX.TemplateLang.Values (TValue(..))
 import GHC.IO (unsafePerformIO)
 

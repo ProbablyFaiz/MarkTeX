@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-module MarkTeX.Evaluation.Expression where
+module MarkTeX.TemplateLang.Expression where
 import Data.Data (Data)
 
 data Expr
@@ -13,4 +13,4 @@ data Expr
   | Italic Expr
   | Hyperlink Expr Expr
   | Image Expr Expr
-  deriving (Show, Eq, Data)
+  deriving (Show, Read, Eq, Data)

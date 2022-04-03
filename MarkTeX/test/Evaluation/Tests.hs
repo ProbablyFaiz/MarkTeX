@@ -1,7 +1,7 @@
 module Evaluation.Tests where
 
 import Evaluation.Predicates
-import MarkTeX.Evaluation.Expression
+import MarkTeX.TemplateLang.Expression
 import MarkTeX.Parsing.Expression (RootExpr)
 import MarkTeX.Parsing.Parser (parseMd)
 
@@ -66,6 +66,8 @@ evalTests' = [
         ], EvalTest "Include statements" "include.md" "empty.json" [
             ("Include without data", ContainsExpr (Text "Val=Inc")),
             ("Include with data", ContainsExpr (Text "Val=Inc1337"))
+        ], EvalTest "Custom hs component" "custom_component.md" "empty.json" [
+            ("Range component", ContainsExpr (UnorderedList [Text "1", Text "2", Text "3"]))
         ]
     ]
 

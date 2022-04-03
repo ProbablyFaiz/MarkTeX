@@ -1,10 +1,8 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 81129657c99300c13399ef4defd39b2c77cf3e27a4b9e7d371016538d3f2cba7
 
 name:           MarkTeX
 version:        0.1.0.0
@@ -27,7 +25,6 @@ source-repository head
 library
   exposed-modules:
       MarkTeX
-      MarkTeX.Evaluation.Expression
       MarkTeX.Evaluation.LatexGenerator
       MarkTeX.Evaluation.MetaEvaluator
       MarkTeX.Parsing.Expression
@@ -43,7 +40,7 @@ library
       TemplateLang
     , aeson
     , array
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers ==0.6.5.1
     , directory
@@ -72,7 +69,7 @@ executable MarkTeX-exe
     , TemplateLang
     , aeson
     , array
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers ==0.6.5.1
     , directory
@@ -106,7 +103,7 @@ test-suite MarkTeX-test
     , TemplateLang
     , aeson
     , array
-    , base >=4.7 && <5
+    , base
     , bytestring
     , containers ==0.6.5.1
     , directory

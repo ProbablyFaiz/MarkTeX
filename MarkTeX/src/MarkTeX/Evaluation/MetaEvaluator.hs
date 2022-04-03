@@ -4,7 +4,7 @@ module MarkTeX.Evaluation.MetaEvaluator where
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
 import qualified MarkTeX.Parsing.Expression as P
-import qualified MarkTeX.Evaluation.Expression as E
+import qualified MarkTeX.TemplateLang.Expression as E
 
 import MarkTeX.TemplateLang hiding ((++))
 import MarkTeX.Parsing.Parser (parseMd)
@@ -105,8 +105,8 @@ runEvaluation dir e d =
 cleanExpr :: E.Expr -> E.Expr
 cleanExpr (E.Seq es)           = E.Seq $ mergeText $ unpackSeq $ map cleanExpr es
 cleanExpr (E.Heading i e)      = E.Heading i (cleanExpr e)
-cleanExpr (E.OrderedList es)   = E.OrderedList $ mergeText $ unpackSeq $ map cleanExpr es
-cleanExpr (E.UnorderedList es) = E.UnorderedList $ mergeText $ unpackSeq $ map cleanExpr es
+cleanExpr (E.OrderedList es)   = E.OrderedList $ unpackSeq $ map cleanExpr es
+cleanExpr (E.UnorderedList es) = E.UnorderedList $ unpackSeq $ map cleanExpr es
 cleanExpr E.NewLine            = E.NewLine
 cleanExpr (E.Text str)         = E.Text str
 cleanExpr (E.Bold e)           = E.Bold (cleanExpr e)
@@ -167,6 +167,7 @@ evalMetaBlock m           _ _   = raiseError $ MetaCommandError $
 evalMetaCommand :: MetaCommand -> Eval E.Expr
 evalMetaCommand (Insert val)           = pure $ E.Text (toString val)
 evalMetaCommand (InsertVar str)        = E.Text . toString <$> evalLookupTValue str
+evalMetaCommand (InsertExpr e)         = pure e
 evalMetaCommand (DocSetting str val)   = emptyExpr <$ insertSetting str val
 evalMetaCommand (DocSettings tdata)    = emptyExpr <$ insertSettings tdata
 evalMetaCommand (LoadHsFile str)       = emptyExpr <$ addFileImport str
