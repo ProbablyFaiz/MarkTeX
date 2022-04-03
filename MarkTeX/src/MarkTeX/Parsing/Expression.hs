@@ -42,4 +42,5 @@ data Expr
   | CommandCode String
   deriving (Show, Eq, Data)
 
+type ParseError = String
 

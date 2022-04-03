@@ -24,27 +24,27 @@ main = do
 
     -- Read Markdown File into string
     inputMd <- readFile mdFileName
-
-    -- Parse Markdown string into RootExpr AST
-    let rootExpr = parseMd inputMd
     
     -- Evaluate the template parts in the AST
-    jsonData <- readJson "data.json"    
-    case jsonData of
-        Left err -> print err --TODO handle error
-        Right tdata -> do
-            putStrLn "Read the json data!"
-            (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
-            case evalResult of
+    case parseMd inputMd of 
+        Left err -> print err
+        Right rootExpr -> do
+            jsonData <- readJson "data.json"    
+            case jsonData of
                 Left err -> print err --TODO handle error
-                Right rootExpr' -> do
-                    putStrLn "Evaluated the templates in the markdown file!"
-                    case documentToLatex rootExpr' env of
+                Right tdata -> do
+                    putStrLn "Read the json data!"
+                    (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
+                    case evalResult of
                         Left err -> print err --TODO handle error
-                        Right latexString -> do
-                            putStrLn "Interpreted the markdown to a LaTeX string!"
-                            documentToPdf latexString (docSettings info) pdfFileName
-                            print tdata
+                        Right rootExpr' -> do
+                            putStrLn "Evaluated the templates in the markdown file!"
+                            case documentToLatex rootExpr' env of
+                                Left err -> print err --TODO handle error
+                                Right latexString -> do
+                                    putStrLn "Interpreted the markdown to a LaTeX string!"
+                                    documentToPdf latexString (docSettings info) pdfFileName
+                                    print tdata
 
 -- | This function `handleArgs` determines whether a valid amount of arguments is passed to the `MarkTeX` executable.
 -- It expects two arguments, an input file name of a markdown file and an output file name of the pdf file, where the markdown is converted to pdf format.

@@ -4,12 +4,12 @@ module MarkTeX.Parsing.Parser (main, parseTokens, parseMd) where
 import MarkTeX.Parsing.Expression
 import MarkTeX.Parsing.Lexer (lexMd)
 
-import System.IO.Unsafe (unsafePerformIO)
 }
 
 %name parseTokens
 %tokentype { Token }
 %error { parseError }
+%monad{ Either ParseError }{ >>= }{ return }
 
 %token
     heading     { THeading $$ }
@@ -60,9 +60,6 @@ SafeExpr : text %prec DATA { Text $1 }
           | SafeExpr SafeExpr %prec CONCAT { Seq [$1, $2] }
 {
 
-parseError :: [Token] -> a
-parseError ts = error $ "Parse error: " ++ show ts
-
 optimizeRootExpr :: RootExpr -> RootExpr
 optimizeRootExpr re = case re of
   RootSeq [re'] -> optimizeRootExpr re'
@@ -111,10 +108,11 @@ fixRootExpr re = if re == re' then re else fixRootExpr re'
   where re' = optimizeRootExpr re
 
 
-parseMd :: String -> RootExpr
-parseMd md = case lexMd md of
-  Left err -> error err
-  Right tokens -> seq (unsafePerformIO $ print $ lexMd md) fixRootExpr $ parseTokens tokens
+parseError :: [Token] -> a
+parseError ts = error $ "Parse error: " ++ show ts
+
+parseMd :: String -> Either ParseError RootExpr
+parseMd md = lexMd md >>= parseTokens >>= return . fixRootExpr
 
 
 main = do

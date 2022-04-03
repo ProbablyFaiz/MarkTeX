@@ -11,29 +11,24 @@ import Data.Char (isSpace)
 
 $digit     = 0-9
 $text = [a-zA-z0-9\#\?\.\:\;\?\,\"\!\$\(\)\/]
-$nontemplatetag = [^\%]
-
--- Each token has a function on the RHS that is a function (String ->
--- Token). We wrap this function in the Alex monad with `pushToken`, which has
--- a result AlexAction ().
 
 tokens :-
 <0>  ^"#"{1,5}" "    { pushToken $ THeading . subtract 1 . length }
 <0>  \*\*            { pushToken $ const TBoldDelimiter }
 <0>  \*              { pushToken $ const TItalicDelimiter }
-<0> \(\"             { pushToken $ const TLHyperlink }
-<0>  \"\)            { pushToken $ const TRHyperlink }
+<hyperlink>  \(      { pushToken $ const TLHyperlink }
+<hyperlink>  \)      { endHyperlink }
 <0>  \!\[            { pushToken $ const TImageStart }
 <0>  \[              { pushToken $ const TLBracket }
-<0>  \]              { pushToken $ const TRBracket }
+<0>  \]              { startHyperlink }
 <0>  "```"           { startCodeSnippet }
 <snippet> "```"      { endCodeSnippet }
 <0> "{{"             { startCommand }
 <command> "}}"       { endCommand }
-<snippet,command> .  { appendStrBuf }
-<snippet,command> \n { appendStrBuf } -- Needs to be given separately from . for some reason
-<0>  "{%" $white* "end" $white* "%}" { pushToken $ const TCommandBlockEnd }
-<0>  "{%"$nontemplatetag+"%}"        { pushToken $ TCommandBlockStart . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
+<snippet,command,commandBlock,hyperlink> . { appendStrBuf }
+<snippet,command,commandBlock> \n { appendStrBuf } -- Needs to be given separately from . for some reason
+<0> "{%"             { startCommandBlock }
+<commandBlock> "%}"  { endCommandBlock }
 <0>  ^"- "           { pushToken $ const TUnorderedItemStart }
 <0>  ^$digit+". "    { pushToken $ const TOrderedItemStart }
 <0>  \n              { pushToken $ const TNewLine }
@@ -45,7 +40,6 @@ data AlexUserState = AlexUserState
                        tokens  :: [Token],
                        strBuf :: String
                    }
-type ParseError    = String
 
 alexEOF :: Alex ()
 alexEOF = return ()
@@ -77,6 +71,33 @@ endCommand = \_ _ -> do
   modifyUserState $ \st -> st { strBuf = "", tokens = (TCommand $ trim $ strBuf st) : tokens st }
   alexMonadScan
 
+startCommandBlock :: AlexAction ()
+startCommandBlock = \_ _ -> do
+  alexSetStartCode commandBlock
+  alexMonadScan
+
+endCommandBlock :: AlexAction ()
+endCommandBlock = \_ _ -> do
+  alexSetStartCode 0
+  modifyUserState (\st -> 
+    let blockStr = trim $ strBuf st
+        tkn = if blockStr == "end" then TCommandBlockEnd else TCommandBlockStart blockStr
+    in  st { strBuf = "", tokens = tkn : tokens st }
+    )
+  alexMonadScan
+
+startHyperlink :: AlexAction ()
+startHyperlink = \_ _ -> do
+  alexSetStartCode hyperlink
+  modifyUserState $ \st -> st { tokens = TRBracket : tokens st }
+  alexMonadScan
+
+endHyperlink :: AlexAction ()
+endHyperlink = \_ _ -> do
+  alexSetStartCode 0
+  modifyUserState $ \st -> st { strBuf = "", tokens = TRHyperlink : (TText $ trim $ strBuf st) : tokens st }
+  alexMonadScan
+
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState { tokens = []
                                    , strBuf = ""
@@ -87,6 +108,9 @@ modifyUserState f = Alex $ \s -> let current = alex_ust s
                                      new     = f current
                                  in
                                    Right (s { alex_ust = new },())
+
+-- type AlexAction a = AlexInput -> Int -> Alex a
+-- type AlexInput = (AlexPosn, Char, [Byte], String)
 
 getUserState ::  Alex AlexUserState
 getUserState = Alex $ \s -> Right (s,alex_ust s)
@@ -108,5 +132,4 @@ lexMd :: String -> Either ParseError [Token]
 lexMd s = runAlexScan s >>= return . reverse . tokens
 
 -- main = getContents >>= print . runAlexScan
-
 }
