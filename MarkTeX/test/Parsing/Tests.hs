@@ -30,6 +30,14 @@ parseTests = [
         ], ParseTest "Lists" "lists.md" [
             ("Unordered", ContainsRootExpr (UnorderedList [Text "ULItem1", Text "ULItem2"])),
             ("Ordered", ContainsRootExpr (OrderedList [Text "OLItem1", Text "OLItem2"]))
+        ], ParseTest "Tags in lists" "tags_in_lists.md" [
+            ("Tags in lists", ContainsRootExpr (UnorderedList [
+                Bold (Text "Bold"), 
+                Italic (Text "Italic"),
+                Hyperlink (Text "LinkText") (Text "LinkUrl"),
+                Image (Text "AltText") (Text "ImageUrl"),
+                CommandCode "SimpleCommand"
+            ]))
         ]
     ]
 

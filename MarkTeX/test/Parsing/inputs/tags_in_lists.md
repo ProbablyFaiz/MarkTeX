@@ -1,0 +1,5 @@
+- **bold**
+- *italic*
+- [LinkText]("LinkUrl")
+- ![AltText]("ImageUrl")
+- {{SimpleCommand}}
