@@ -37,6 +37,7 @@ dependencies:
 - aeson
 - split
 - directory
+- mtl
 
 library:
   source-dirs: src

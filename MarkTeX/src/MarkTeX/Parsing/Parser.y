@@ -2,12 +2,14 @@
 module MarkTeX.Parsing.Parser (main, parseTokens, parseMd) where
 
 import MarkTeX.Parsing.Expression
-import MarkTeX.Parsing.Lexer (alexScanTokens)
+import MarkTeX.Parsing.Lexer (lexMd)
+
 }
 
 %name parseTokens
 %tokentype { Token }
 %error { parseError }
+%monad{ Either ParseError }{ >>= }{ return }
 
 %token
     heading     { THeading $$ }
@@ -20,6 +22,7 @@ import MarkTeX.Parsing.Lexer (alexScanTokens)
     templ       { TCommand $$ }
     tblockstart { TCommandBlockStart $$ }
     tblockend   { TCommandBlockEnd }
+    codesnippet { TCodeSnippet $$ }
     "!["        { TImageStart }
     "["         { TLBracket }
     "]"         { TRBracket }
@@ -37,6 +40,7 @@ import MarkTeX.Parsing.Lexer (alexScanTokens)
 
 RootExpr : heading Expr { Heading $1 $2 }
          | tblockstart RootExpr tblockend %prec COMMAND { CommandBlockCode $1 $2 }
+         | codesnippet { CodeSnippet $1 }
          | "- " Expr "\n" %prec DATA { UnorderedList [$2] }
          | "n. " Expr "\n" %prec DATA { OrderedList [$2] }
          | Expr { Body $1 }
@@ -55,9 +59,6 @@ SafeExpr : text %prec DATA { Text $1 }
           | templ %prec COMMAND { CommandCode $1 }
           | SafeExpr SafeExpr %prec CONCAT { Seq [$1, $2] }
 {
-
-parseError :: [Token] -> a
-parseError ts = error $ "Parse error: " ++ show ts
 
 optimizeRootExpr :: RootExpr -> RootExpr
 optimizeRootExpr re = case re of
@@ -107,13 +108,15 @@ fixRootExpr re = if re == re' then re else fixRootExpr re'
   where re' = optimizeRootExpr re
 
 
-parseMd :: String -> RootExpr
-parseMd md = fixRootExpr $ parseTokens $ alexScanTokens md
+parseError :: [Token] -> a
+parseError ts = error $ "Parse error: " ++ show ts
+
+parseMd :: String -> Either ParseError RootExpr
+parseMd md = lexMd md >>= parseTokens >>= return . fixRootExpr
 
 
 main = do
   s <- getContents
   print s
-  print $ alexScanTokens s
   print $ parseMd s
 }

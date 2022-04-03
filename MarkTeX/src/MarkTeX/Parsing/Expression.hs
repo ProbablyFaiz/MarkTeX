@@ -17,6 +17,7 @@ data Token
   | TCommand String
   | TCommandBlockStart String
   | TCommandBlockEnd
+  | TCodeSnippet String
   | TNewLine
   deriving (Show, Eq)
 
@@ -27,6 +28,7 @@ data RootExpr
   | UnorderedList [Expr]
   | NewLine
   | CommandBlockCode String RootExpr
+  | CodeSnippet String
   | RootSeq [RootExpr]
   deriving (Show, Eq, Data)
 
@@ -40,4 +42,5 @@ data Expr
   | CommandCode String
   deriving (Show, Eq, Data)
 
+type ParseError = String
 

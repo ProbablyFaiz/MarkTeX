@@ -138,6 +138,7 @@ evalRootExpr (P.UnorderedList es)       = E.UnorderedList <$> traverse evalExpr 
 evalRootExpr P.NewLine                  = pure E.NewLine
 evalRootExpr (P.CommandBlockCode str e) = evalCommandCode str >>= \cmd -> evalMetaBlock cmd e str
 evalRootExpr (P.RootSeq es)             = E.Seq <$> traverse evalRootExpr es
+evalRootExpr (P.CodeSnippet s)          = pure $ E.CodeSnippet s
 
 -- | The `evalExpr` function says what computation to do for evaluating the different `Expr` expressions.
 -- When a `CommandCode` is encountered the code string is evaluated and the `evalMetaCommand` function is called with the resulting `MetaCommand`.
@@ -218,10 +219,11 @@ evalInclude str dat = Eval $
     \(State env info) -> do
         let filePath = fileDir info </> str
         inputMd <- readFile filePath;
-        let evalExpr = parseMd inputMd;
         let evalDat = fromMaybe env dat;
         let newDir = takeDirectory filePath;
-        runEvaluation newDir evalExpr evalDat;
+        case parseMd inputMd of
+          Left s -> error "Parsing included markdown file failed."
+          Right evalExpr -> runEvaluation newDir evalExpr evalDat;
 
 -- | The `interpretCommand` function interprets the code string as a `MetaCommand` in the `IO` monad.
 -- The result is either a valid `MetaCommand` or an `InterpreterError` if the interpreter failed to interpret the code string.
