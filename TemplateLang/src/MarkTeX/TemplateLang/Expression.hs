@@ -12,5 +12,6 @@ data Expr
   | Bold Expr
   | Italic Expr
   | Hyperlink Expr Expr
+  | CodeSnippet String
   | Image Expr Expr
   deriving (Show, Read, Eq, Data)

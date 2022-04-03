@@ -22,6 +22,7 @@ import System.IO.Unsafe (unsafePerformIO)
     templ       { TCommand $$ }
     tblockstart { TCommandBlockStart $$ }
     tblockend   { TCommandBlockEnd }
+    codesnippet { TCodeSnippet $$ }
     "!["        { TImageStart }
     "["         { TLBracket }
     "]"         { TRBracket }
@@ -39,6 +40,7 @@ import System.IO.Unsafe (unsafePerformIO)
 
 RootExpr : heading Expr { Heading $1 $2 }
          | tblockstart RootExpr tblockend %prec COMMAND { CommandBlockCode $1 $2 }
+         | codesnippet { CodeSnippet $1 }
          | "- " Expr "\n" %prec DATA { UnorderedList [$2] }
          | "n. " Expr "\n" %prec DATA { OrderedList [$2] }
          | Expr { Body $1 }

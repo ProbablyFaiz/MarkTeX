@@ -18,18 +18,21 @@ tokens :-
 <0>  ^"#"{1,5}" "    { pushToken $ THeading . subtract 1 . length }
 <0>  \*\*            { pushToken $ const TBoldDelimiter }
 <0>  \*              { pushToken $ const TItalicDelimiter }
-<0>  \(\"            { pushToken $ const TLHyperlink }
+<0> \(\"             { pushToken $ const TLHyperlink }
 <0>  \"\)            { pushToken $ const TRHyperlink }
 <0>  \!\[            { pushToken $ const TImageStart }
 <0>  \[              { pushToken $ const TLBracket }
 <0>  \]              { pushToken $ const TRBracket }
-<0>  "{{".+"}}"      { pushToken $ TCommand . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
+<0>  "```"           { startCodeSnippet }
+<snippet> .          { appendStrBuf }
+<snippet> \n         { appendStrBuf }
+<snippet> "```"      { endCodeSnippet }
+<0>  "{{".+"}}"   { pushToken $ TCommand . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
 <0>  "{%" $white* "end" $white* "%}" { pushToken $ const TCommandBlockEnd }
 <0>  "{%"$nontemplatetag+"%}"        { pushToken $ TCommandBlockStart . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
 <0>  ^"- "           { pushToken $ const TUnorderedItemStart }
 <0>  ^$digit+". "    { pushToken $ const TOrderedItemStart }
 <0>  \n              { pushToken $ const TNewLine }
-<0>  $white          { pushToken TText }
 <0>  .               { pushToken TText }
 {
 
@@ -45,9 +48,16 @@ alexEOF = return ()
 
 ignore input len = alexMonadScan
 
------------------
--- Lexer State --
------------------
+startCodeSnippet :: AlexAction ()
+startCodeSnippet = \_ _ -> do
+    alexSetStartCode snippet
+    alexMonadScan
+
+endCodeSnippet :: AlexAction ()
+endCodeSnippet = \_ _ -> do
+  alexSetStartCode 0
+  modifyUserState $ \st -> st { strBuf = "", tokens = (TCodeSnippet $ strBuf st) : tokens st }
+  alexMonadScan
 
 alexInitUserState :: AlexUserState
 alexInitUserState = AlexUserState { tokens = []
@@ -69,6 +79,9 @@ pushToken tokenizer =
     where
        push :: String -> AlexUserState -> AlexUserState
        push s st = st { tokens = tokenizer s : tokens st }
+
+appendStrBuf :: AlexAction ()
+appendStrBuf = \(_,_,_,s) len -> modifyUserState (\st -> st { strBuf = strBuf st ++ take len s }) >> alexMonadScan
 
 runAlexScan :: String -> Either ParseError AlexUserState
 runAlexScan s = runAlex s $ alexMonadScan >> getUserState

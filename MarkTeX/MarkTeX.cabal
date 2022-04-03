@@ -28,7 +28,7 @@ library
       MarkTeX.Evaluation.LatexGenerator
       MarkTeX.Evaluation.MetaEvaluator
       MarkTeX.Parsing.Expression
-      MarkTeX.Parsing.MonadicLexer
+      MarkTeX.Parsing.Lexer
       MarkTeX.Parsing.Parser
       MarkTeX.PdfGenerator
       MarkTeX.ReadJson

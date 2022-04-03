@@ -110,6 +110,7 @@ exprToLaTeX ds (Image e (Text url)) =
     ++> exprToLaTeX ds e
     <++ "}\n"
     ++ "\\end{figure}\n"
+exprToLaTeX ds (CodeSnippet s) = pure $ "\\begin{verbatim}" ++ s ++ "\\end{verbatim}\n"
 exprToLaTeX ds (Hyperlink _ _) = Left $ ExpectedHyperlinkText "The url of a hyperlink should be given in plain text!"
 exprToLaTeX ds (Image     _ _) = Left $ ExpectedImageText     "The path to an image should be given in plain text!"
 
