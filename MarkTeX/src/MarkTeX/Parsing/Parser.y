@@ -2,7 +2,9 @@
 module MarkTeX.Parsing.Parser (main, parseTokens, parseMd) where
 
 import MarkTeX.Parsing.Expression
-import MarkTeX.Parsing.Lexer (alexScanTokens)
+import MarkTeX.Parsing.Lexer (lexMd)
+
+import System.IO.Unsafe (unsafePerformIO)
 }
 
 %name parseTokens
@@ -108,12 +110,13 @@ fixRootExpr re = if re == re' then re else fixRootExpr re'
 
 
 parseMd :: String -> RootExpr
-parseMd md = fixRootExpr $ parseTokens $ alexScanTokens md
+parseMd md = case lexMd md of
+  Left err -> error err
+  Right tokens -> seq (unsafePerformIO $ print $ lexMd md) fixRootExpr $ parseTokens tokens
 
 
 main = do
   s <- getContents
   print s
-  print $ alexScanTokens s
   print $ parseMd s
 }
