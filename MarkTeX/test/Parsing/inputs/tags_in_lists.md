@@ -1,5 +1,5 @@
 - **bold**
 - *italic*
-- [LinkText]("LinkUrl")
-- ![AltText]("ImageUrl")
+- [LinkText](LinkUrl)
+- ![AltText](ImageUrl)
 - {{SimpleCommand}}

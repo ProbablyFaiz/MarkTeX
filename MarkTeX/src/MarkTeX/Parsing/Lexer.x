@@ -129,7 +129,7 @@ runAlexScan :: String -> Either ParseError AlexUserState
 runAlexScan s = runAlex s $ alexMonadScan >> getUserState
 
 lexMd :: String -> Either ParseError [Token]
-lexMd s = runAlexScan s >>= return . reverse . tokens
+lexMd s = runAlexScan s >>= return . reverse . (TNewLine:) . tokens
 
 -- main = getContents >>= print . runAlexScan
 }

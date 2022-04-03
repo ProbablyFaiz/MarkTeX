@@ -74,7 +74,9 @@ evalTests' = [
 evalTestToTestTree :: EvalTest -> TestTree
 evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
     rootExpr :: RootExpr
-    rootExpr = parseMd $ unsafePerformIO (readFile ("test/Evaluation/inputs/md/" </> mdFile))
+    rootExpr = case parseMd $ unsafePerformIO (readFile ("test/Evaluation/inputs/md/" </> mdFile)) of
+        Left err -> error $ "Error parsing " ++ mdFile ++ ": " ++ show err
+        Right r -> r
     jsonData :: TData
     jsonData = case unsafePerformIO (readJson ("test/Evaluation/inputs/json/" </> jsonFile)) of
         Left err  -> error $ show err
