@@ -29,4 +29,6 @@ MarkTeX supports all the usual features of Markdown, like **bold** and
 
 ## Template System
 
+The idea of the template system is to be able to execute Haskell code to insert data, create subcomponents and to control the eventual look of the document.
+
 ## TeX Backend
