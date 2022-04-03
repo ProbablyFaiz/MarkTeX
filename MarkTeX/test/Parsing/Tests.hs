@@ -27,6 +27,9 @@ parseTests = [
             ("Simple command", ContainsExpr (CommandCode "SimpleCommand")),
             ("Block command", ContainsRootExpr (CommandBlockCode "BlockCommand" emptyRootExpr)),
             ("Inline block command", ContainsRootExpr (CommandBlockCode "BlockCommand2" emptyRootExpr))
+        ], ParseTest "Code command blocks" "code_blocks.md" [
+            ("Block with inner inline", ContainsExpr (Seq [Italic $ CommandCode "Command1In", CommandCode "Command2In"])),
+            ("Block with inner newline", ContainsExpr (Seq [Italic $ CommandCode "Command1New", CommandCode "Command2New"]))
         ], ParseTest "Lists" "lists.md" [
             ("Unordered", ContainsRootExpr (UnorderedList [Text "ULItem1", Text "ULItem2"])),
             ("Ordered", ContainsRootExpr (OrderedList [Text "OLItem1", Text "OLItem2"]))

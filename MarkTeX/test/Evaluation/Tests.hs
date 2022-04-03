@@ -8,7 +8,7 @@ import MarkTeX.Parsing.Parser (parseMd)
 import Test.Tasty
 import Test.Tasty.HUnit
 import GHC.IO (unsafePerformIO)
-import System.FilePath ((</>), takeDirectory)
+import System.FilePath ((</>), takeDirectory, dropFileName)
 import MarkTeX.TemplateLang (TData)
 import MarkTeX (readJson, runEvaluation, EvaluationError)
 import MarkTeX.Evaluation.MetaEvaluator (State)
@@ -41,11 +41,20 @@ evalTests' :: [EvalTest]
 evalTests' = [
         EvalTest "If statement" "if.md" "if.json" [
             ("If true", ContainsExpr (Bold $ Text "Show")),
-            ("If false", NotContainsExpr (Bold $ Text "NotShow"))
+            ("If false", NotContainsExpr (Bold $ Text "NotShow")),
+            ("IfVar true", ContainsExpr (Bold $ Text "ShowVar")),
+            ("IfVar false", NotContainsExpr (Bold $ Text "NotShowVar"))
         ], EvalTest "For statement" "for.md" "for.json" [
-            ("For 1 to 3", ContainsExpr (Seq [Italic $ Text "1", Italic $ Text "2", Italic $ Text "3"]))
-        ], EvalTest "SetVar" "setvar.md" "empty.json" [
+            ("For 1 to 3", ContainsExpr (Seq [Italic $ Text "1", Italic $ Text "2", Italic $ Text "3"])),
+            ("For 1 to 3, if > 1", ContainsExpr (Seq [Bold $ Text "2", Bold $ Text "3"]))
+        ], EvalTest "SetVar statement" "setvar.md" "empty.json" [
             ("SetVar overwrites", ContainsExpr (Seq [Bold $ Text "5", Bold $ Text "1337"]))
+        ], EvalTest "While statement" "while.md" "empty.json" [
+            ("While 1 to 3", ContainsExpr (Seq [Italic $ Text "1", Italic $ Text "2", Italic $ Text "3"]))
+        ], EvalTest "Import statements" "imports.md" "empty.json" [
+            ("Import Data.Char", ContainsExpr (Bold $ Text "5"))
+        ], EvalTest "Import file statements" "importfile.md" "empty.json" [
+            ("Import somestring", ContainsExpr (Text "somestring"))
         ]
     ]
 
@@ -58,7 +67,7 @@ evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
         Left err  -> error $ show err
         Right dat -> dat
     evalResult :: Either EvaluationError Expr
-    evalResult = snd $ unsafePerformIO $! runEvaluation (takeDirectory mdFile) rootExpr jsonData
+    evalResult = snd $ unsafePerformIO $! runEvaluation "test/Evaluation/inputs/md/" rootExpr jsonData
     testToAssertion :: EvalPredicate -> Assertion
     testToAssertion ReturnsError = assertBool "No error was returned" (isLeft evalResult)
     testToAssertion p = if isLeft evalResult

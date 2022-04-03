@@ -11,11 +11,14 @@ import MarkTeX.Parsing.Parser (parseMd)
 
 import Data.Bifunctor (Bifunctor(..))
 import System.IO.Temp (withTempFile)
+import System.Directory (makeAbsolute)
 import System.FilePath ((</>), takeDirectory)
 import GHC.IO.Handle (hClose, hFlushAll, hIsReadable, hIsWritable, hPutStr)
 import Data.Either (fromLeft)
 import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
+import GHC.IO (unsafePerformIO)
+import qualified Language.Haskell.Interpreter.Unsafe as I
 
 ----- Types & Instances -----
 
@@ -32,7 +35,7 @@ type RelativeDir = FilePath
 
 -- | The `Information` datatype contains the meta information about import statements and document settings.
 data Information = Information {
-  relativeDir :: RelativeDir,
+  fileDir :: RelativeDir,
   docSettings :: Settings,
   fileImports :: [String],
   imports :: [String],
@@ -94,11 +97,22 @@ instance Monad Eval where
 runEvaluation :: RelativeDir -> P.RootExpr -> TData -> IO (State, Either EvaluationError E.Expr)
 runEvaluation dir e d =
     let (Eval evaluation) = cleanExpr <$> evalRootExpr e
-     in evaluation (State d (emptySettings dir))
+     in do
+        absDir <- makeAbsolute dir;
+        evaluation (State d (emptySettings absDir));
 
+-- | Removes empty Seq from the expression tree
 cleanExpr :: E.Expr -> E.Expr
-cleanExpr (E.Seq es) = E.Seq $ filter (\e -> e /= E.Seq []) es
-cleanExpr e          = e
+cleanExpr (E.Seq es)           = E.Seq $ map cleanExpr $ filter (/= E.Seq []) es
+cleanExpr (E.Heading i e)      = E.Heading i (cleanExpr e)
+cleanExpr (E.OrderedList es)   = E.OrderedList $ map cleanExpr $ filter (/= E.Seq []) es
+cleanExpr (E.UnorderedList es) = E.UnorderedList $ map cleanExpr $ filter (/= E.Seq []) es
+cleanExpr E.NewLine            = E.NewLine
+cleanExpr (E.Text str)         = E.Text str
+cleanExpr (E.Bold e)           = E.Bold (cleanExpr e)
+cleanExpr (E.Italic e)         = E.Italic (cleanExpr e)
+cleanExpr (E.Hyperlink e1 e2)  = E.Hyperlink (cleanExpr e1) (cleanExpr e2)
+cleanExpr (E.Image e1 e2)      = E.Image (cleanExpr e1) (cleanExpr e2)
 
 -- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
 -- For the subexpressions `Expr` it calls the `evalExpr` function.
@@ -189,7 +203,7 @@ evalCommandCode str = Eval $
 evalInclude :: String -> Maybe TData -> Eval E.Expr
 evalInclude str dat = Eval $
     \(State env info) -> do
-        let filePath = relativeDir info </> str
+        let filePath = fileDir info </> str
         inputMd <- readFile filePath;
         let evalExpr = parseMd inputMd;
         let evalDat = fromMaybe env dat;
@@ -206,10 +220,11 @@ interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info
 
         createInterpreter :: Information -> String -> String -> I.Interpreter MetaCommand
         createInterpreter info str path = do
-            I.loadModules (path : map (relativeDir info </>) (fileImports info))
-            I.setTopLevelModules ("TEnv" : imports info)
-            I.setImportsQ (("Prelude", Just "P") : map (second Just) (importsQ info))
-            I.interpret str (I.as :: MetaCommand)
+            I.set [I.searchPath I.:= ["."]];
+            I.loadModules (path : map (fileDir info </>) (fileImports info));
+            I.setImportsQ (("Prelude", Just "P") : map (second Just) (importsQ info) ++ zip (imports info) (repeat Nothing));
+            I.setTopLevelModules ("TEnv" : imports info);
+            I.interpret str (I.as :: MetaCommand);
 
         withHsEnvModule :: Environment -> (String -> IO a) -> IO a
         withHsEnvModule env f = withTempFile "." ".hs" fileHandler
@@ -309,13 +324,13 @@ emptyExpr = E.Seq []
 
 -- | This state is the initial empty state, which contains no data yet
 emptyState :: FilePath -> State
-emptyState relativeDir = State M.empty (emptySettings relativeDir)
+emptyState fileDir = State M.empty (emptySettings fileDir)
 
 -- | Empty settings used for initializing an empty state
 emptySettings :: FilePath -> Information
-emptySettings relativeDir = Information { docSettings = M.empty
+emptySettings fileDir = Information { docSettings = M.empty
                             , fileImports = []
                             , imports = []
                             , importsQ = []
-                            , relativeDir = relativeDir
+                            , fileDir = fileDir
                             }

@@ -67,4 +67,4 @@ packages:
 # Allow a newer minor version of GHC than the snapshot specifies
 # compiler-check: newer-minor
 extra-deps:
-  - hint-0.9.0.5
+  - hint-0.9.0.6
