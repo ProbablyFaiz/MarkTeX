@@ -25,6 +25,7 @@ parseTests = [
             ("Image", ContainsExpr (Image (Text "AltText") (Text "ImageUrl")))
         ], ParseTest "Code tags" "code_tags.md" [
             ("Simple command", ContainsExpr (CommandCode "SimpleCommand")),
+            ("Inline simple commands", ContainsExpr (Seq [CommandCode "SimpleCommand1", CommandCode "SimpleCommand2"])),
             ("Block command", ContainsRootExpr (CommandBlockCode "BlockCommand" emptyRootExpr)),
             ("Inline block command", ContainsRootExpr (CommandBlockCode "BlockCommand2" emptyRootExpr))
         ], ParseTest "Code command blocks" "code_blocks.md" [
@@ -49,8 +50,8 @@ parseTestToTestTree (ParseTest str file ps) = testGroup str tests where
     expr :: RootExpr
     expr = parseMd $ unsafePerformIO (readFile ("test/Parsing/inputs/" </> file))
     testToAssertion :: ParserPredicate -> Assertion
-    testToAssertion (ContainsExpr e)     = assertBool ("Cannot find " ++ show e) (containsEPredicate e expr)
-    testToAssertion (ContainsRootExpr e) = assertBool ("Cannot find " ++ show e) (containsREPredicate e expr)
+    testToAssertion (ContainsExpr e)     = assertBool ("Cannot find " ++ show e ++ ", got " ++ show expr) (containsEPredicate e expr)
+    testToAssertion (ContainsRootExpr e) = assertBool ("Cannot find " ++ show e ++ ", got " ++ show expr) (containsREPredicate e expr)
     tests :: [TestTree]
     tests = map (\(str', p) -> testCase str' (testToAssertion p)) ps
 

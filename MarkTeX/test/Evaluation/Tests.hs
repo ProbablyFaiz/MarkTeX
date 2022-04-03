@@ -39,7 +39,15 @@ getTestName _ = undefined
 
 evalTests' :: [EvalTest]
 evalTests' = [
-        EvalTest "If statement" "if.md" "if.json" [
+        EvalTest "Insert statement" "insert.md" "insert.json" [
+            ("Bool", ContainsExpr (Text "True")),
+            ("String", ContainsExpr (Text "String")),
+            ("Int", ContainsExpr (Text "1")),
+            ("Float", ContainsExpr (Text "1.5")),
+            ("List", ContainsExpr (Text "[1, 2, 3]")),
+            ("Map", ContainsExpr (Text "map_beforeitem1item2map_end")),
+            ("Null", ContainsExpr (Text "null_beforenull_end"))
+        ], EvalTest "If statement" "if.md" "if.json" [
             ("If true", ContainsExpr (Bold $ Text "Show")),
             ("If false", NotContainsExpr (Bold $ Text "NotShow")),
             ("IfVar true", ContainsExpr (Bold $ Text "ShowVar")),
@@ -54,7 +62,10 @@ evalTests' = [
         ], EvalTest "Import statements" "imports.md" "empty.json" [
             ("Import Data.Char", ContainsExpr (Bold $ Text "5"))
         ], EvalTest "Import file statements" "importfile.md" "empty.json" [
-            ("Import somestring", ContainsExpr (Text "somestring"))
+            ("Import test_import.hs", ContainsExpr (Text "somestring"))
+        ], EvalTest "Include statements" "include.md" "empty.json" [
+            ("Include without data", ContainsExpr (Text "Val=Inc")),
+            ("Include with data", ContainsExpr (Text "Val=Inc1337"))
         ]
     ]
 

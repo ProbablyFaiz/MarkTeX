@@ -101,18 +101,30 @@ runEvaluation dir e d =
         absDir <- makeAbsolute dir;
         evaluation (State d (emptySettings absDir));
 
--- | Removes empty Seq from the expression tree
+-- | Removes empty Seq from the expression tree, removes unneccesary nesting, merges sequential text expressions
 cleanExpr :: E.Expr -> E.Expr
-cleanExpr (E.Seq es)           = E.Seq $ map cleanExpr $ filter (/= E.Seq []) es
+cleanExpr (E.Seq es)           = E.Seq $ mergeText $ unpackSeq $ map cleanExpr es
 cleanExpr (E.Heading i e)      = E.Heading i (cleanExpr e)
-cleanExpr (E.OrderedList es)   = E.OrderedList $ map cleanExpr $ filter (/= E.Seq []) es
-cleanExpr (E.UnorderedList es) = E.UnorderedList $ map cleanExpr $ filter (/= E.Seq []) es
+cleanExpr (E.OrderedList es)   = E.OrderedList $ mergeText $ unpackSeq $ map cleanExpr es
+cleanExpr (E.UnorderedList es) = E.UnorderedList $ mergeText $ unpackSeq $ map cleanExpr es
 cleanExpr E.NewLine            = E.NewLine
 cleanExpr (E.Text str)         = E.Text str
 cleanExpr (E.Bold e)           = E.Bold (cleanExpr e)
 cleanExpr (E.Italic e)         = E.Italic (cleanExpr e)
 cleanExpr (E.Hyperlink e1 e2)  = E.Hyperlink (cleanExpr e1) (cleanExpr e2)
 cleanExpr (E.Image e1 e2)      = E.Image (cleanExpr e1) (cleanExpr e2)
+
+-- | Unpacks a Seq in a list so that there's no unneccesary nesting
+unpackSeq :: [E.Expr] -> [E.Expr] 
+unpackSeq []                = []
+unpackSeq ((E.Seq ys) : xs) = ys ++ unpackSeq xs
+unpackSeq (x : xs)          = x : unpackSeq xs
+
+-- | Merge sequential text expressions
+mergeText :: [E.Expr] -> [E.Expr]
+mergeText []                         = []
+mergeText (E.Text x : E.Text y : xs) = mergeText (E.Text (x ++ y) : xs)
+mergeText (x : xs)                   = x : mergeText xs
 
 -- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
 -- For the subexpressions `Expr` it calls the `evalExpr` function.
