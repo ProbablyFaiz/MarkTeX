@@ -113,6 +113,7 @@ cleanExpr (E.Bold e)           = E.Bold (cleanExpr e)
 cleanExpr (E.Italic e)         = E.Italic (cleanExpr e)
 cleanExpr (E.Hyperlink e1 e2)  = E.Hyperlink (cleanExpr e1) (cleanExpr e2)
 cleanExpr (E.Image e1 e2)      = E.Image (cleanExpr e1) (cleanExpr e2)
+cleanExpr (E.CodeSnippet s)    = E.CodeSnippet s
 
 -- | Unpacks a Seq in a list so that there's no unneccesary nesting
 unpackSeq :: [E.Expr] -> [E.Expr] 
