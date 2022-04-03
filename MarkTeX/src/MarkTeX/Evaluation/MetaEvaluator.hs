@@ -97,7 +97,8 @@ runEvaluation dir e d =
      in evaluation (State d (emptySettings dir))
 
 cleanExpr :: E.Expr -> E.Expr
-cleanExpr = id -- TODO
+cleanExpr (E.Seq es) = E.Seq $ filter (\e -> e /= E.Seq []) es
+cleanExpr e          = e
 
 -- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
 -- For the subexpressions `Expr` it calls the `evalExpr` function.

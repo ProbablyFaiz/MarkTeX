@@ -52,8 +52,15 @@ sameCons _       _               = False
 
 toString :: TValue -> String
 toString (TString str)   = str
-toString (TNumber num)   = show num
+toString (TNumber num)   = if isInt num then show $ toInt num else show num
 toString (TBool bool)    = show bool
 toString (TList vallist) = show vallist
 toString (TData dat)     = show dat
 toString TNull           = ""
+
+-- Check with 7 decimals of precision
+isInt :: RealFrac b => b -> Bool
+isInt x = round (10^7*(x-fromIntegral (round x)))==0
+
+toInt :: RealFrac b => b -> Int 
+toInt = round

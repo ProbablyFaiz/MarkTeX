@@ -14,6 +14,7 @@ import MarkTeX (readJson, runEvaluation, EvaluationError)
 import MarkTeX.Evaluation.MetaEvaluator (State)
 import Control.Arrow (right)
 import Data.Either (isLeft, fromRight)
+import Test.Tasty.Runners
 
 type MDFilePath = FilePath
 type JSONFilePath = FilePath
@@ -21,7 +22,20 @@ type JSONFilePath = FilePath
 data EvalTest = EvalTest String MDFilePath JSONFilePath [(String, EvalPredicate)]
 
 evalTests :: TestTree
-evalTests = testGroup "Evaluation" (map evalTestToTestTree evalTests')
+evalTests = testGroup "Evaluation" (evalTestsSeq $ map evalTestToTestTree evalTests')
+
+-- | Wait for earlier tests to finish since the eval doesn't work well in parallel
+evalTestsSeq :: [TestTree] -> [TestTree]
+evalTestsSeq = evalTestsSeq' Nothing where
+    evalTestsSeq' :: Maybe String -> [TestTree] -> [TestTree]
+    evalTestsSeq' lastName []     = []
+    evalTestsSeq' lastName (t:ts) = case lastName of
+        Nothing  -> t : evalTestsSeq' (Just $ getTestName t) ts
+        Just str -> after AllFinish str t : evalTestsSeq' (Just $ getTestName t) ts
+
+getTestName :: TestTree -> String 
+getTestName (TestGroup str _) = str
+getTestName _ = undefined
 
 evalTests' :: [EvalTest]
 evalTests' = [
@@ -29,7 +43,9 @@ evalTests' = [
             ("If true", ContainsExpr (Bold $ Text "Show")),
             ("If false", NotContainsExpr (Bold $ Text "NotShow"))
         ], EvalTest "For statement" "for.md" "for.json" [
-            ("For 1 to 3", ContainsExpr (Seq [Italic $ Text "1.0", Italic $ Text "2.0", Italic $ Text "3.0"]))
+            ("For 1 to 3", ContainsExpr (Seq [Italic $ Text "1", Italic $ Text "2", Italic $ Text "3"]))
+        ], EvalTest "SetVar" "setvar.md" "empty.json" [
+            ("SetVar overwrites", ContainsExpr (Seq [Bold $ Text "5", Bold $ Text "1337"]))
         ]
     ]
 
@@ -42,7 +58,7 @@ evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
         Left err  -> error $ show err
         Right dat -> dat
     evalResult :: Either EvaluationError Expr
-    evalResult = snd $ unsafePerformIO $ runEvaluation (takeDirectory mdFile) rootExpr jsonData
+    evalResult = snd $ unsafePerformIO $! runEvaluation (takeDirectory mdFile) rootExpr jsonData
     testToAssertion :: EvalPredicate -> Assertion
     testToAssertion ReturnsError = assertBool "No error was returned" (isLeft evalResult)
     testToAssertion p = if isLeft evalResult
