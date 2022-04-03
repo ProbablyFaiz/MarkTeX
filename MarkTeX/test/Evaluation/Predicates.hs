@@ -2,8 +2,9 @@ module Evaluation.Predicates where
 
 import MarkTeX.TemplateLang.Expression
 import Data.Data (toConstr)
+import MarkTeX.TemplateLang (TValue)
 
-data EvalPredicate = ContainsExpr Expr | NotContainsExpr Expr | ReturnsError
+data EvalPredicate = ContainsExpr Expr | NotContainsExpr Expr | DocSettingEquals String TValue | ReturnsError
 
 -- | Searches for a `Expr` in a `Expr`, an empty Seq [] Expr is treated as a wildcard
 containsPredicate :: Expr -> Expr -> Bool

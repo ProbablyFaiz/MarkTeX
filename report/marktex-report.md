@@ -54,7 +54,7 @@ More on these later.
 
 ## Template System
 
-
+The idea of the template system is to be able to execute Haskell code to insert data, create subcomponents and to control the eventual look of the document.
 
 
 ## \TeX/PDF Backend
