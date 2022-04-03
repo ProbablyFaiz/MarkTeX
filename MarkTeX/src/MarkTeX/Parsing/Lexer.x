@@ -1,7 +1,8 @@
 {
 module MarkTeX.Parsing.Lexer (main, alexScanTokens) where
 
-import MarkTeX.Parsing.Expression
+
+import MarkTeX.Parsing.Expression (Token(..))
 }
 
 -- TODO: Rewrite as monadic w/ startcodes so hyperlinks, templates etc. can be much less hacky
@@ -27,7 +28,7 @@ tokens :-
   ^$digit+". "     { \s -> TOrderedItemStart }
   \n              { \s -> TNewLine }
   $white          { \s -> TText s }
-  .               { \s -> TText s } -- TODO This rule should really be . but doing this now for output readability
+  .               { \s -> TText s }
 {
 
 main = do
