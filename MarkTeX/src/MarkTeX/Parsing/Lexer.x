@@ -2,6 +2,9 @@
 module MarkTeX.Parsing.Lexer where
 
 import MarkTeX.Parsing.Expression
+
+import Data.List (dropWhileEnd)
+import Data.Char (isSpace)
 }
 
 %wrapper "monadUserState"
@@ -24,10 +27,11 @@ tokens :-
 <0>  \[              { pushToken $ const TLBracket }
 <0>  \]              { pushToken $ const TRBracket }
 <0>  "```"           { startCodeSnippet }
-<snippet> .          { appendStrBuf }
-<snippet> \n         { appendStrBuf }
 <snippet> "```"      { endCodeSnippet }
-<0>  "{{".+"}}"   { pushToken $ TCommand . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
+<0> "{{"             { startCommand }
+<command> "}}"       { endCommand }
+<snippet,command> .  { appendStrBuf }
+<snippet,command> \n { appendStrBuf } -- Needs to be given separately from . for some reason
 <0>  "{%" $white* "end" $white* "%}" { pushToken $ const TCommandBlockEnd }
 <0>  "{%"$nontemplatetag+"%}"        { pushToken $ TCommandBlockStart . (\s -> let s' = drop 2 s in take (length s' - 2) s') }
 <0>  ^"- "           { pushToken $ const TUnorderedItemStart }
@@ -48,6 +52,9 @@ alexEOF = return ()
 
 ignore input len = alexMonadScan
 
+trim :: String -> String
+trim = dropWhileEnd isSpace . dropWhile isSpace
+
 startCodeSnippet :: AlexAction ()
 startCodeSnippet = \_ _ -> do
     alexSetStartCode snippet
@@ -57,6 +64,17 @@ endCodeSnippet :: AlexAction ()
 endCodeSnippet = \_ _ -> do
   alexSetStartCode 0
   modifyUserState $ \st -> st { strBuf = "", tokens = (TCodeSnippet $ strBuf st) : tokens st }
+  alexMonadScan
+
+startCommand :: AlexAction ()
+startCommand = \_ _ -> do
+  alexSetStartCode command
+  alexMonadScan
+
+endCommand :: AlexAction ()
+endCommand = \_ _ -> do
+  alexSetStartCode 0
+  modifyUserState $ \st -> st { strBuf = "", tokens = (TCommand $ trim $ strBuf st) : tokens st }
   alexMonadScan
 
 alexInitUserState :: AlexUserState
