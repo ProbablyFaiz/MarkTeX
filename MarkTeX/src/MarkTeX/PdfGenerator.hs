@@ -38,6 +38,8 @@ documentToPdf latexString docSettings pdfFileName = do
 -- | The `latexToPdf` function converts a latex file into a pdf file.
 latexToPdf :: FilePath -> FilePath -> FilePath -> IO ExitCode
 latexToPdf outputDir texFile pdfFile = system $ pdfLatexCommand outputDir texFile pdfFile ++
+                                                -- Run pdfLaTeX again for cross-references etc.
+                                                " && " ++ pdfLatexCommand outputDir texFile pdfFile ++
                                                 -- Move the pdf file to the outer directory if the compile succeeds
                                                 " && " ++ mvOutputPdfCommand outputDir pdfFile
     where
