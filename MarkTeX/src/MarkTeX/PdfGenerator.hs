@@ -26,14 +26,20 @@ documentToPdf latexString docSettings pdfFileName = do
     -- Write the LaTeX to the intermediate file
     writeFile tempTexFile latexString
 
-    -- Convert the latex file to a pdf file with pdflatex
-    exitCode <- latexToPdf tempDir tempTexFile pdfFileName
+    -- Check if pdflatex is installed
+    installedExitCode <- system "pdflatex --help"
+    case installedExitCode of
+        ExitFailure n -> 
+            putStrLn "The command \"pdflatex\" was not found! Make sure that you have a LaTeX installation on your computer system to convert a LaTeX file to pdf format."
+        ExitSuccess -> do
+            -- Convert the latex file to a pdf file with pdflatex
+            exitCode <- latexToPdf tempDir tempTexFile pdfFileName
 
-    -- Deletes the temp files 
-    removeDirectoryRecursive tempDir
+            -- Deletes the temp files 
+            removeDirectoryRecursive tempDir
 
-    -- Handle the value of the exit code
-    handleExitCode exitCode
+            -- Handle the value of the exit code
+            handleExitCode exitCode
      
 -- | The `latexToPdf` function converts a latex file into a pdf file.
 latexToPdf :: FilePath -> FilePath -> FilePath -> IO ExitCode
@@ -56,6 +62,5 @@ handleExitCode exitCode =
         ExitSuccess -> do
             putStrLn "Successfully converted the MarkDown to a pdf file!"
         ExitFailure n -> do
-            putStrLn $ "Converting the MarkDown to a pdf file led to a failure with exit code " ++ show n ++ "\n"
-                     ++ "Make sure that a LaTeX installation is installed on your system."
+            putStrLn $ "Converting the MarkDown to a pdf file led to a failure with exit code " ++ show n
             --TODO: possibly handle case distinction on n -> what are possible failure codes
