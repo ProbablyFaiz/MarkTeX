@@ -33,13 +33,13 @@ main = do
             case jsonData of
                 Left err -> print err --TODO handle error
                 Right tdata -> do
-                    putStrLn "Read the json data!"
                     (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
+                    print (docSettings info)
                     case evalResult of
                         Left err -> print err --TODO handle error
                         Right rootExpr' -> do
                             putStrLn "Evaluated the templates in the markdown file!"
-                            case documentToLatex rootExpr' env of
+                            case documentToLatex rootExpr' (docSettings info) of
                                 Left err -> print err --TODO handle error
                                 Right latexString -> do
                                     putStrLn "Interpreted the markdown to a LaTeX string!"

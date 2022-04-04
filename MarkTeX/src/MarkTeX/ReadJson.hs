@@ -10,6 +10,7 @@ import qualified Data.Vector as V
 import qualified Data.Scientific as SC
 
 import MarkTeX.TemplateLang
+import System.Directory (doesFileExist)
 
 data ReadJsonError = DecodeJson String
                    | ConvertJson String
@@ -17,8 +18,12 @@ data ReadJsonError = DecodeJson String
 
 readJson :: String -> IO (Either ReadJsonError TData)
 readJson fileName = do
-    bytes <- BS.readFile fileName
-    return (bytesToTData bytes)
+    fileExists <- doesFileExist fileName
+    if fileExists
+        then do bytes <- BS.readFile fileName
+                putStrLn "Read the json data!"
+                return (bytesToTData bytes)
+        else return (Right M.empty)
 
 -- | `bytesToTData` converts a bytestring into a TData map.
 -- Can possibly return an error if either decoding the json fails or converting to TData fails.

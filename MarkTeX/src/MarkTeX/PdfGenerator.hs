@@ -57,5 +57,5 @@ handleExitCode exitCode =
             putStrLn "Successfully converted the MarkDown to a pdf file!"
         ExitFailure n -> do
             putStrLn $ "Converting the MarkDown to a pdf file led to a failure with exit code " ++ show n ++ "\n"
-                     ++ "Make sure that pdflatex is installed on your system."
+                     ++ "Make sure that a LaTeX installation is installed on your system."
             --TODO: possibly handle case distinction on n -> what are possible failure codes
