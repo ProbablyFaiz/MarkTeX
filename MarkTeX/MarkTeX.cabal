@@ -36,6 +36,9 @@ library
       Paths_MarkTeX
   hs-source-dirs:
       src
+  build-tools:
+      alex
+    , happy
   build-depends:
       TemplateLang
     , aeson
@@ -65,6 +68,9 @@ executable MarkTeX-exe
   hs-source-dirs:
       app
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       MarkTeX
     , TemplateLang
@@ -100,6 +106,9 @@ test-suite MarkTeX-test
   hs-source-dirs:
       test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-tools:
+      alex
+    , happy
   build-depends:
       MarkTeX
     , TemplateLang

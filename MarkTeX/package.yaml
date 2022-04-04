@@ -45,6 +45,10 @@ library:
   - base
   - TemplateLang
 
+build-tools:
+- alex
+- happy
+
 executables:
   MarkTeX-exe:
     main:                Main.hs
