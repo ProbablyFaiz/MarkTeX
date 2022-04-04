@@ -11,7 +11,7 @@ import GHC.IO (unsafePerformIO)
 import System.FilePath ((</>), takeDirectory, dropFileName)
 import MarkTeX.TemplateLang (TData, toString, TValue (TString))
 import qualified Data.Map as M
-import MarkTeX (readJson, runEvaluation, EvaluationError, State (State), Information (docSettings), Environment)
+import MarkTeX (readJson, runEvaluation, EvaluationError, State (State), Information (settings), Environment)
 import MarkTeX.Evaluation.MetaEvaluator (State)
 import Control.Arrow (right)
 import Data.Either (isLeft, fromRight)
@@ -97,7 +97,7 @@ evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
             (ContainsExpr e) -> assertBool ("Cannot find " ++ show e ++ ", got " ++ show evalResult) (containsPredicate e (fromRight emptyExpr evalResult))
             (NotContainsExpr e) -> assertBool ("Found " ++ show e) (not $ containsPredicate e (fromRight emptyExpr evalResult))
             (DocSettingEquals str val) -> assertBool ("Docsetting " ++ str ++ " does not equal " ++ toString val) (
-                case M.lookup str (docSettings info) of
+                case M.lookup str (settings info) of
                     Nothing   -> False
                     Just val' -> val' == val
                 )

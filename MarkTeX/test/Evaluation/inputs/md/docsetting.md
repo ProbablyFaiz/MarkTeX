@@ -1,2 +1,2 @@
-{{tDocSetting "Setting1" "Value1"}}
-{{tDocSettings [("Setting2", "Value2"),("Setting3", "Value3")]}}
+{{docSetting "Setting1" "Value1"}}
+{{docSettings [("Setting2", "Value2"),("Setting3", "Value3")]}}

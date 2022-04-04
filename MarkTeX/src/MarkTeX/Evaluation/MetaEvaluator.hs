@@ -36,7 +36,7 @@ type RelativeDir = FilePath
 -- | The `Information` datatype contains the meta information about import statements and document settings.
 data Information = Information {
   fileDir :: RelativeDir,
-  docSettings :: Settings,
+  settings :: Settings,
   fileImports :: [String],
   imports :: [String],
   importsQ :: [(String, String)]
@@ -291,16 +291,16 @@ insertTValue k v = Eval $
 -- | The `insertSetting` function adds a document setting to the current document settings.
 insertSetting :: String -> TValue -> Eval ()
 insertSetting k v = Eval $
-    \(State env info@Information{docSettings = docSettings}) ->
+    \(State env info@Information{settings = docSettings}) ->
         let newDocSettings = M.insert k v docSettings
-        in return (State env info{docSettings = newDocSettings}, Right ())
+        in return (State env info{settings = newDocSettings}, Right ())
 
 -- | The `insertSettings` function adds a map of document settings to the current document settings.
 insertSettings :: TData -> Eval ()
 insertSettings newData = Eval $
-    \(State env info@Information{docSettings = docSettings}) ->
+    \(State env info@Information{settings = docSettings}) ->
         let newDocSettings = docSettings `M.union` newData
-        in return (State env info{docSettings = newDocSettings}, Right ())
+        in return (State env info{settings = newDocSettings}, Right ())
 
 -- | The function `addFileImport` is used to add a file to import to the current import list.
 addFileImport :: String -> Eval ()
@@ -344,7 +344,7 @@ emptyState fileDir = State M.empty (emptySettings fileDir)
 
 -- | Empty settings used for initializing an empty state
 emptySettings :: FilePath -> Information
-emptySettings fileDir = Information { docSettings = M.empty
+emptySettings fileDir = Information { settings = M.empty
                             , fileImports = []
                             , imports = []
                             , importsQ = []

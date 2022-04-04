@@ -34,16 +34,16 @@ main = do
                 Left err -> print err --TODO handle error
                 Right tdata -> do
                     (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
-                    print (docSettings info)
+                    print (settings info)
                     case evalResult of
                         Left err -> print err --TODO handle error
                         Right rootExpr' -> do
                             putStrLn "Evaluated the templates in the markdown file!"
-                            case documentToLatex rootExpr' (docSettings info) of
+                            case documentToLatex rootExpr' (settings info) of
                                 Left err -> print err --TODO handle error
                                 Right latexString -> do
                                     putStrLn "Interpreted the markdown to a LaTeX string!"
-                                    documentToPdf latexString (docSettings info) pdfFileName
+                                    documentToPdf latexString (settings info) pdfFileName
                                     print tdata
 
 -- | This function `handleArgs` determines whether a valid amount of arguments is passed to the `MarkTeX` executable.

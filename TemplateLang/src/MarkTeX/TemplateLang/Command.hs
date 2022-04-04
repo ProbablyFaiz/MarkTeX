@@ -23,26 +23,26 @@ data MetaCommand = If TValue | IfVar String |
   -- TODO add a nice shortcut function with the above for colors
   deriving (Read, Show, Typeable)
 
-tIf :: (ToTValue a) => a -> MetaCommand
-tIf = If . toTValue
+ifTrue :: (ToTValue a) => a -> MetaCommand
+ifTrue = If . toTValue
  
-tIfNot :: (ToTValue a) => a -> MetaCommand
-tIfNot = If . toTValue . not . toTValue 
+ifFalse :: (ToTValue a) => a -> MetaCommand
+ifFalse = If . toTValue . not . toTValue 
 
-tInsert :: (ToTValue a) => a -> MetaCommand
-tInsert = Insert . toTValue
+insert :: (ToTValue a) => a -> MetaCommand
+insert = Insert . toTValue
 
-tDocSetting :: ToTValue a => String -> a -> MetaCommand
-tDocSetting str = DocSetting str . toTValue
+docSetting :: ToTValue a => String -> a -> MetaCommand
+docSetting str = DocSetting str . toTValue
 
-tDocSettings :: ToTValue a => [(String, a)] -> MetaCommand
-tDocSettings tdata = DocSettings $ M.fromList $ map (second toTValue) tdata
+docSettings :: ToTValue a => [(String, a)] -> MetaCommand
+docSettings tdata = DocSettings $ M.fromList $ map (second toTValue) tdata
 
-tSet :: ToTValue a => String -> a -> MetaCommand
-tSet str = SetVar str . toTValue
+set :: ToTValue a => String -> a -> MetaCommand
+set str = SetVar str . toTValue
 
-tFor :: ToTValue a => String -> a -> MetaCommand
-tFor str = For str . toTValue
+for :: ToTValue a => String -> a -> MetaCommand
+for str = For str . toTValue
 
-tWhile :: ToTValue a => a -> MetaCommand
-tWhile = While . toTValue
+while :: ToTValue a => a -> MetaCommand
+while = While . toTValue
