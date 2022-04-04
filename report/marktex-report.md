@@ -1,3 +1,5 @@
+{{ tDocSetting "preambleStatements" "\\geometry{a4paper,margin=2in" }}
+
 (TODO: Add cover page support to MarkTeX or equivalent LaTeX commands)
 
 Title: The MarkTeX document system
@@ -40,15 +42,15 @@ The MarkTeX language is a superset of the Markdown language.\footnote{The most a
 ```
 # A sample MarkTeX document
 
-MarkTeX supports all the usual features of Markdown, like **bold** and
-*italic formatting*, as well as [hyperlinks]
+MarkTeX supports all the usual features of Markdown, like
+**bold** and *italic formatting*, as well as [hyperlinks]
 (https://www.youtube.com/watch?v=dQw4w9WgXcQ).
 
-MarkTeX also supports some unique features, like {{ templates }} and even
+MarkTeX also supports some unique features, like {{ templates }}
+and even
 {% block statements %}
-{% end %}
-
 More on these later.
+{% end %}
 ```
 
 
@@ -62,3 +64,7 @@ The idea of the template system is to be able to execute Haskell code to insert 
 MarkTeX's core implementation does not assume nor rely upon any eventual output format. Depending on intended usage, backends for MarkTeX's intermediate representation could be implemented for several formats, including HTML, Word, and even regular Markdown.
 
 MarkTeX currently implements a backend for one output format: LaTeX-created PDF files. The MarkTeX IR is first transpiled to a LaTeX file which is then compiled to a PDF using PDFLaTeX.
+
+# Reflection
+
+TODO
