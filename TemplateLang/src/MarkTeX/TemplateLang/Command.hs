@@ -18,7 +18,8 @@ data MetaCommand = If TValue | IfVar String |
   -- ImportQ = ModuleName QualifiedName
   LoadHsFile String | Import String | ImportQ String String |
   Include String | IncludeWith String TData | 
-  SetVar String TValue | For String TValue | While TValue
+  SetVar String TValue | For String TValue | While TValue |
+  ReadJson String | ReadJsonQ String String
   -- TODO add LateX commands (with options)
   -- TODO add a nice shortcut function with the above for colors
   deriving (Read, Show, Typeable)
@@ -46,3 +47,16 @@ for str = For str . toTValue
 
 while :: ToTValue a => a -> MetaCommand
 while = While . toTValue
+
+-- Include lowercase versions of the other metacommands as well?
+
+-- ifVar :: String -> MetaCommand
+-- ifVar = IfVar
+-- 
+-- insertVar :: String -> MetaCommand
+-- insertVar = InsertVar
+-- 
+-- insertExpr :: Expr -> MetaCommand
+-- insertExpr = InsertExpr
+--
+-- ...

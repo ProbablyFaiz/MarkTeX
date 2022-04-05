@@ -27,7 +27,7 @@ documentToPdf latexString docSettings pdfFileName = do
     writeFile tempTexFile latexString
 
     -- Check if pdflatex is installed
-    installedExitCode <- system "pdflatex --help"
+    installedExitCode <- system "pdflatex --help > /dev/null"
     case installedExitCode of
         ExitFailure n -> 
             putStrLn "The command \"pdflatex\" was not found! Make sure that you have a LaTeX installation on your computer system to convert a LaTeX file to pdf format."

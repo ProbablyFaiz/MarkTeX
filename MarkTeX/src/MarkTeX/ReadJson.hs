@@ -1,4 +1,4 @@
-module MarkTeX.ReadJson (readJson) where
+module MarkTeX.ReadJson (readJson, readOptionalJson, ReadJsonError(..)) where
 
 import Data.Aeson (eitherDecode, encode, decode, Object(..), Value(..))
 
@@ -9,21 +9,31 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Scientific as SC
 
+import Data.Functor ((<&>))
+
 import MarkTeX.TemplateLang
 import System.Directory (doesFileExist)
 
 data ReadJsonError = DecodeJson String
                    | ConvertJson String
+                   | FileDoesNotExist FilePath
     deriving (Show)
 
+-- | Read data from a json file if the file exists
+readOptionalJson :: String -> IO (Either ReadJsonError TData)
+readOptionalJson fileName = do
+    fileExists <- doesFileExist fileName
+    if fileExists
+        then BS.readFile fileName <&> bytesToTData
+        else return $ Right M.empty
+
+-- | Read data from a json file, throws an error if it does not exist
 readJson :: String -> IO (Either ReadJsonError TData)
 readJson fileName = do
     fileExists <- doesFileExist fileName
     if fileExists
-        then do bytes <- BS.readFile fileName
-                putStrLn "Read the json data!"
-                return (bytesToTData bytes)
-        else return (Right M.empty)
+        then BS.readFile fileName <&> bytesToTData
+        else return $ Left $ FileDoesNotExist fileName
 
 -- | `bytesToTData` converts a bytestring into a TData map.
 -- Can possibly return an error if either decoding the json fails or converting to TData fails.

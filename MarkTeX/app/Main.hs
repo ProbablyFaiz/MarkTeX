@@ -9,7 +9,9 @@ import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.Evaluation.LatexGenerator (documentToLatex)
 import MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..))
 import MarkTeX.PdfGenerator (documentToPdf)
-import MarkTeX.ReadJson (readJson) 
+import MarkTeX.ReadJson (readOptionalJson) 
+
+-- data MarkTexError = EvalError | ReadJsonError | ....
 
 -- | The `main` function takes a markdown file and converts it to a pdf file.
 -- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.
@@ -29,11 +31,11 @@ main = do
     case parseMd inputMd of 
         Left err -> print err
         Right rootExpr -> do
-            jsonData <- readJson "data.json"    
-            case jsonData of
+            jsonContents <- readOptionalJson "data/data.json"    
+            case jsonContents of
                 Left err -> print err --TODO handle error
-                Right tdata -> do
-                    (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr tdata
+                Right jsonData -> do
+                    (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData
                     print (settings info)
                     case evalResult of
                         Left err -> print err --TODO handle error
@@ -44,7 +46,7 @@ main = do
                                 Right latexString -> do
                                     putStrLn "Interpreted the markdown to a LaTeX string!"
                                     documentToPdf latexString (settings info) pdfFileName
-                                    print tdata
+                                    print jsonData
 
 -- | This function `handleArgs` determines whether a valid amount of arguments is passed to the `MarkTeX` executable.
 -- It expects two arguments, an input file name of a markdown file and an output file name of the pdf file, where the markdown is converted to pdf format.

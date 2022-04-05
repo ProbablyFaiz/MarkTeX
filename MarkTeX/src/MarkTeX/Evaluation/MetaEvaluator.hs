@@ -8,6 +8,7 @@ import qualified MarkTeX.TemplateLang.Expression as E
 
 import MarkTeX.TemplateLang hiding ((++))
 import MarkTeX.Parsing.Parser (parseMd)
+import MarkTeX.ReadJson (readJson, readOptionalJson, ReadJsonError(..))
 
 import Data.Bifunctor (Bifunctor(..))
 import System.IO.Temp (withTempFile)
@@ -19,6 +20,7 @@ import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 import GHC.IO (unsafePerformIO)
 import qualified Language.Haskell.Interpreter.Unsafe as I
+import Language.Haskell.Interpreter (eval)
 
 ----- Types & Instances -----
 
@@ -49,6 +51,7 @@ data EvaluationError = MetaCommandError String
                      | ExpectedWhile String
                      | ParseKeyError String
                      | InterpreterError I.InterpreterError
+                     | ReadDataError FilePath ReadJsonError
     deriving (Show)
 
 -- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
@@ -178,6 +181,8 @@ evalMetaCommand (ImportQ strMod strAs) = emptyExpr <$ addQImport strMod strAs
 evalMetaCommand (SetVar str val)       = emptyExpr <$ insertTValue str val
 evalMetaCommand (Include str)          = evalInclude str Nothing
 evalMetaCommand (IncludeWith str dat)  = evalInclude str (Just dat)
+evalMetaCommand (ReadJson path)        = emptyExpr <$ (readJsonData path >>= insertTValues)    
+evalMetaCommand (ReadJsonQ path qName) = emptyExpr <$ (readJsonData path >>= insertTValue qName . TData)
 evalMetaCommand m                      = raiseError $ MetaCommandError $
     "Input is not a simple metacommand!\nReceived the following metacommand:\n" ++ show m
 
@@ -288,6 +293,13 @@ insertTValue k v = Eval $
         let newenv = M.insert k v env
         in return (State newenv info, Right ())
 
+-- | The function `insertTValue` inserts a value for a the given key into the environment data.
+insertTValues :: TData -> Eval ()
+insertTValues newData = Eval $
+    \(State env info) ->
+        let newenv = env `M.union` newData
+        in return (State newenv info, Right ())
+
 -- | The `insertSetting` function adds a document setting to the current document settings.
 insertSetting :: String -> TValue -> Eval ()
 insertSetting k v = Eval $
@@ -320,6 +332,17 @@ addQImport strMod strAs = Eval $
     \(State env info@Information{importsQ = importsQ}) ->
         return (State env info{importsQ = importsQ ++ [(strMod, strAs)]}, Right ())
 
+-- | Read additional json data
+readJsonData :: String -> Eval TData
+readJsonData path = Eval $ 
+    \s@(State env info) -> do
+        contents <- readJson path -- or readOptionalJson, to not fail when a file does not exist
+        print contents
+        return (s, mapLeft (ReadDataError path) contents)
+    
+mapLeft :: (a -> b) -> Either a c -> Either b c
+mapLeft f (Left a)  = Left (f a)
+mapLeft _ (Right b) = Right b
 
 ----- Helper functions for raising an error and retrieving a TValue list, together with some empty data states -----
 
@@ -345,8 +368,8 @@ emptyState fileDir = State M.empty (emptySettings fileDir)
 -- | Empty settings used for initializing an empty state
 emptySettings :: FilePath -> Information
 emptySettings fileDir = Information { settings = M.empty
-                            , fileImports = []
-                            , imports = []
-                            , importsQ = []
-                            , fileDir = fileDir
-                            }
+                                    , fileImports = []
+                                    , imports = []
+                                    , importsQ = []
+                                    , fileDir = fileDir
+                                    }
