@@ -1,7 +1,6 @@
--- | The module `PdfGenerator` contains utility functions to convert a MarkDown AST to a latex or pdf file.
--- The `documentToPdf` function converts a `RootExpr` to a pdf file.
--- The `documentToLatex` and `latexToPdf` functions perform the intermediate steps of converting a `RootExpr` to a latex string and converting a latex file to a pdf file respectively.
-module MarkTeX.PdfGenerator (documentToPdf, latexToPdf) where
+-- | The module `PdfGenerator` contains utility functions to convert a latex file to a pdf file.
+-- The `documentToPdf` function converts a latex string to a pdf file.
+module MarkTeX.PdfGenerator (documentToPdf, PDFGenerationError(..)) where
 
 import MarkTeX.TemplateLang (TData)
 import MarkTeX.TemplateLang.Expression (Expr)
@@ -10,6 +9,11 @@ import GHC.IO.Exception (ExitCode(..))
 import System.Process (system)
 import System.Directory (removeFile, createDirectoryIfMissing, removeDirectoryRecursive, renameFile)
 import System.FilePath (joinPath)
+
+
+data PDFGenerationError = PDFGenerationError String
+                        | PDFLaTeXNotFound String
+    deriving (Show)
 
 
 -- | The `documentToPdf` function takes a LateX `String` together with certain document settings in a `TData` format and converts it to a pdf file.
@@ -50,7 +54,7 @@ latexToPdf outputDir texFile pdfFile = system $ pdfLatexCommand outputDir texFil
                                                 " && " ++ mvOutputPdfCommand outputDir pdfFile
     where
         pdfLatexCommand :: FilePath -> FilePath -> FilePath -> String
-        pdfLatexCommand out tex pdf = "pdflatex -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex ++ " > /dev/null"
+        pdfLatexCommand out tex pdf = "pdflatex -halt-on-error -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex ++ " > /dev/null"
 
         mvOutputPdfCommand :: FilePath -> FilePath -> String
         mvOutputPdfCommand out pdf = let pdfPath = pdf ++ ".pdf" in "mv " ++ joinPath [out, pdfPath] ++ " " ++ pdfPath

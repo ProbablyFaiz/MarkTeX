@@ -339,11 +339,10 @@ readJsonData path = Eval $
         contents <- readJson path -- or readOptionalJson, to not fail when a file does not exist
         print contents
         return (s, mapLeft (ReadDataError path) contents)
-    
+
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f (Left a)  = Left (f a)
 mapLeft _ (Right b) = Right b
-
 ----- Helper functions for raising an error and retrieving a TValue list, together with some empty data states -----
 
 

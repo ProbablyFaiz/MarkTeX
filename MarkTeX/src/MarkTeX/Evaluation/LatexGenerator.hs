@@ -23,7 +23,7 @@ type ToLatex = Either ToLatexError String
 ----- Functions for combining normal strings and LaTeX strings -----
 
 
--- These operators bind to the left and have a higher priority than (++)
+-- These operators bind to the left just like (++) and have a higher priority than (++)
 infixl 4 <++>
 infixl 4 ++>
 infixl 4 <++
