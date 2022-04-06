@@ -47,11 +47,10 @@ data Information = Information {
 
 -- | The `EvaluationError` datatype contains the different kinds of errors which can occur while evaluating the templates.
 data EvaluationError = MetaCommandError String
-                     | LookupError String
                      | ExpectedWhile String
                      | ParseKeyError String
+                     | ReadDataError ReadJsonError
                      | InterpreterError I.InterpreterError
-                     | ReadDataError FilePath ReadJsonError
     deriving (Show)
 
 -- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
@@ -338,11 +337,12 @@ readJsonData path = Eval $
     \s@(State env info) -> do
         contents <- readJson path -- or readOptionalJson, to not fail when a file does not exist
         print contents
-        return (s, mapLeft (ReadDataError path) contents)
+        return (s, mapLeft ReadDataError contents)
 
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f (Left a)  = Left (f a)
 mapLeft _ (Right b) = Right b
+
 ----- Helper functions for raising an error and retrieving a TValue list, together with some empty data states -----
 
 

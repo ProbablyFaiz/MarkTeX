@@ -1,4 +1,4 @@
-- presentation/demo
+o presentation/demo
 
 
 - report
@@ -6,54 +6,58 @@
 
 - code
 
-    - templatelang
-        - maybe naming things with lowercase instead of prefix t, so while instead of tWhile and set instead of tSet
-            - the only problem is with built-in keyword if, but this could be ifVal or (?) or something (or just stay tIf)
-            - then you have get, set, insert, while etc.
+    o templatelang
+        o maybe naming things with lowercase instead of prefix t, so while instead of tWhile and set instead of tSet
+            o the only problem is with built-in keyword if, but this could be ifVal or (?) or something (or just stay tIf)
+            o then you have get, set, insert, while etc.
 
-    - testing
-        - make a test suite
+    o testing
+        o make a test suite
 
-    - json data
-        - should expect data in relative ./data folder
-        - support for multiple jsons?
-            - nest the data in the environment such that you have to do file1.name, file2.name or possibly overwrite stuff?
-            - support sub-folders with json files?
+    o json data
+        o should expect data in relative ./data folder
+        o support for multiple jsons?
+            o metacommand for reading additional data
+            ~ nest the data in the environment such that you have to do file1.name, file2.name or possibly overwrite stuff?
+            ~ support sub-folders with json files?
+            -> supports additional loading of data by user!
 
-    - images
-        - should expect data in relative ./image folder
+    ~ images
+        ~ should expect data in relative ./images folder
 
-    - latex conversion
-        - docSettings -> include latex imports?
-        - alter image positioning? (right now it is sometimes positioned at the top of the pdf file)
+    o latex conversion
+        o docSettings -> include latex imports?
+        ~ alter image positioning? (right now it is sometimes positioned at the top of the pdf file)
 
-    - pdf conversion
-        - do pdf conversion in a temporary folder
-            - cleanup all temporary files and temporary folder
-        - hide pdflatex output if possible?
-        - possibly run the conversion twice for nicer output? (saw that in the pdflatex output)
+    o pdf conversion
+        o do pdf conversion in a temporary folder
+            o cleanup all temporary files and temporary folder
+        o hide pdflatex output if possible?
+        o possibly run the conversion twice for nicer output? (saw that in the pdflatex output)
 
-    - handle errors more explicitly
-        - print more specific error messages which indicate what went wrong and what the issue is/might be + possible solution?
+    o handle errors more explicitly
+        o print more specific error messages which indicate what went wrong and what the issue is/might be + possible solution?
 
-    - project-level things
-        - clean up temporary files/chunks of code
+    ~ project-level things
+        ~ clean up temporary files/chunks of code
         - fill out readme.md's/package.yaml's
-        - rename stuff where needed
-        - specific importing/exporting of functions/datatypes
-        - commenting everything
+        ~ rename stuff where needed
+        ~ specific importing/exporting of functions/datatypes
+        - commenting everything + haddock documentation
 
-    - the meta-evaluation of a while now for example generates a separate list for every iteration of the loop, while you probably want one list containing an item for each iteration
-    - find out why there are so many newlines in the generated latex? (not really a problem i think)
+    o cleanup rootexpr
+        o the meta-evaluation of a while now for example generates a separate list for every iteration of the loop, while you probably want one list containing an item for each iteration
+        o find out why there are so many newlines in the generated latex? (not really a problem i think)
+
+    o doc-settings (we don't use this yet really)
+        o page margin, page numbering, page footer/header, table of contents probably?
+
+    o latex input/commands
+        o literal text is copied over, so this is supported in some sense (like the example with $$ a^2 = b^2 + c^2 $$ )
+        o otherwise shortcuts for color and similar things like we discussed, but how to tackle this exactly?
 
     - user options
         - choose whether to convert to md/latex/pdf may be nice (as an input argument to the program or a doc-setting?)
-
-    - doc-settings (we don't use this yet really)
-        - page margin, page numbering, page footer/header, table of contents probably?
-
-    - latex input/commands
-        - literal text is copied over, so this is supported in some sense (like the example with $$ a^2 = b^2 + c^2 $$ )
-        - otherwise shortcuts for color and similar things like we discussed, but how to tackle this exactly?
-
+        ~ output to md/html maybe?
+        ~ output to latex without pdf conversion if you want to do intermediate latex changes?
     - tables if there are really no more things to do, probably better to avoid this now, since we would have to make changes everywhere

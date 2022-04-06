@@ -15,7 +15,6 @@ import MarkTeX.TemplateLang
 import System.Directory (doesFileExist)
 
 data ReadJsonError = DecodeJson String
-                   | ConvertJson String
                    | FileDoesNotExist FilePath
     deriving (Show)
 

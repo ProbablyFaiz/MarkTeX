@@ -4,6 +4,7 @@ import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
 import System.Environment (getArgs)
 import System.FilePath (takeDirectory)
+import Language.Haskell.Interpreter as I (InterpreterError(..), GhcError(..))
 
 import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..))
@@ -78,63 +79,88 @@ handleArgs args =
             args ->
                 error $ "Expected at most two arguments, but received " ++ show (length args) ++ " arguments!"
 
--- | The operator '(>>>=)' specifies how to chain 'IO (Either a b)' functions.
--- The input 'IO (Either a b)' argument is evaluated to a 'Either a b' datatype.
--- If this action failed, thus when this evaluates to the 'Left' constructor, this 'Left' constructor is returned.
--- Otherwise the second argument of type '(b -> IO (Either a c))' takes the value of the 'Right' constructor and performs the action of the second argument on this value.
-(>>>=) :: IO (Either a b) -> (b -> IO (Either a c)) -> IO (Either a c)
-a >>>= b = do
-    a' <- a
-    case a' of
-      Left  l -> return $ Left l
-      Right r -> b r
+-- Handling all possible errors
 
--- | The function 'mapLeft' maps a function on the 'Left' constructor of an 'Either' datatype.
--- If the 'Either' constructor is the 'Right' constructor, then this 'Right' constructor is returned.
-mapLeft :: (a -> b) -> Either a c -> Either b c
-mapLeft f (Left  x) = Left (f x)
-mapLeft _ (Right x) = Right x
-
--- | For an 'IO' action which contains an 'Either' datatype, we map the 'mapLeft' on this 'Either' datatype.
--- A 'Left' constructor is mapped with the input function, while a 'Right' constructor is left untouched.
-onFail :: IO (Either a c) -> (a -> b) -> IO (Either b c)
-e `onFail` f = mapLeft f <$> e
-
--- | The function 'reorder' reorders an '(a, Either b c)' datatype to a 'Either b (a, c)' datatype.
-reorder :: (a, Either b c) -> Either b (a, c)
-reorder (x, e) = case e of
-    Left l  -> Left l
-    Right r -> Right (x, r)
-
-
-
-documentToPdf2 :: String -> Settings -> String -> IO (Either PDFGenerationError ())
-documentToPdf2 = undefined
-
-pipeline :: String -> String -> String -> IO (Either MarkTexError ())
-pipeline inputMd mdFileName pdfFileName =
-    pure (parseMd inputMd) `onFail` ParsingError
-        >>>= \rootExpr ->
-
-    readOptionalJson "data/data.json" `onFail` ReadingDataError
-        >>>= \jsonData ->
-    
-    fmap reorder (runEvaluation (takeDirectory mdFileName) rootExpr jsonData) `onFail` EvaluatingError
-        >>>= \(State env info, expr) ->
-
-    pure (documentToLatex expr (settings info)) `onFail` ConvertingToLaTeXError
-        >>>= \latexString ->
-
-    documentToPdf2 latexString (settings info) pdfFileName `onFail` GeneratingPDFError
-
-        
 handleParseError :: ParseError -> IO ()
-handleParseError = print
+handleParseError msg = do
+    putStrLn "MarkTeX failed while parsing the input document!"
+    printRaisedError msg
+
 handleReadDataError :: ReadJsonError -> IO ()
-handleReadDataError = print
+handleReadDataError err = do
+    putStrLn "MarkTeX failed while reading the initial json data file!"
+    handleReadDataError' err
+
+handleReadDataError' :: ReadJsonError -> IO ()
+handleReadDataError' err =
+    case err of
+        DecodeJson msg -> do
+            putStrLn "The failure happened while interpreting the file contents as a JSON object."
+            printRaisedError msg
+        FileDoesNotExist path -> do
+            putStrLn $ "The file on the path \"" ++ path ++ "\" does not exist or could not be found!"
+
+
 handleEvaluationError :: EvaluationError -> IO ()
-handleEvaluationError = print
+handleEvaluationError err = do
+    putStrLn "MarkTeX failed while evaluating the template language!"
+    case err of 
+        MetaCommandError msg -> do
+            putStrLn "The failure happened because of an unexpected MetaCommand!"
+            printRaisedError msg
+        ExpectedWhile msg -> do
+            putStrLn "The failure was raised because the evaluated MetaCommand is no longer a \"While\" constructor!"
+            putStrLn "Make sure that a \"While\" MetaCommand always stays a \"While\" MetaCommand."
+            printRaisedError msg
+        ParseKeyError msg -> do
+            putStrLn "Failed on parsing the specified key for looking up a value in the environment!"
+            printRaisedError msg
+        ReadDataError rje -> do
+            putStrLn "The failure happened while reading additional json data!"
+            handleReadDataError' rje
+        InterpreterError ierr -> do
+            putStrLn "The failure happened during the evaluation of a MetaCommand!"
+            case ierr of
+                UnknownError msg -> do
+                    putStrLn "Failed due to an unknown error!"
+                    printRaisedError msg
+                NotAllowed msg -> do
+                    putStrLn "The specified computation was not allowed!"
+                    printRaisedError msg 
+                GhcException msg -> do
+                    putStrLn "A GHC exception was raised during evaluation!"
+                    printRaisedError msg
+                WontCompile ghcErrs -> do
+                    putStrLn "The specified template string does not compile!"
+                    putStrLn "Press Enter to see the GHC errors that were raised..."
+                    _ <- getLine
+                    putStrLn $ unlines $ map errMsg ghcErrs
+                    
+                
 handleLaTeXConversionError :: ToLatexError -> IO ()
-handleLaTeXConversionError = print
+handleLaTeXConversionError err = do
+    putStrLn "MarkTeX failed during the translation to LaTeX!"
+    case err of 
+        InvalidSectionLevel msg -> do
+            putStrLn "The failure was raised due to an invalid section level!"
+            printRaisedError msg
+        ExpectedHyperlinkText msg -> do
+            putStrLn "The failure was encountered because the url of a hyperlink was not given in plain text!"
+            printRaisedError msg
+        ExpectedImageText msg -> do
+            putStrLn "The failure was encountered because the path to an image was not given in plain text!"
+            printRaisedError msg
+
 handlePDFGenerationError :: PDFGenerationError -> IO ()
-handlePDFGenerationError = print
+handlePDFGenerationError err = do
+    putStrLn "MarkTex failed during the PDF generation step!"
+    case err of
+        PDFGenerationError msg -> do
+            putStrLn "The failure happened while generating the pdf from the LaTeX string!"
+            printRaisedError msg
+        PDFLaTeXNotFound msg -> do
+            putStrLn "The failure happened while checking if \"pdflatex\" is installed!"
+            printRaisedError msg
+
+printRaisedError :: String -> IO ()
+printRaisedError msg = putStrLn $ "The following error was raised:\n" ++ msg 
