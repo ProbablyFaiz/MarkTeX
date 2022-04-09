@@ -3,7 +3,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE TypeOperators #-}
 
 module MarkTeX.TemplateLang.List where
 

@@ -1,42 +1,48 @@
+-- | The 'Main' module contains the 'main' function which is the starting point of the program.
+-- Besides the main function it also contains some helper function which handle the input arguments or handle the errors which can be raised during the execution of the program.
+-- For every possible error that is raised detailed information about where the program ran into this error is given to the user.
 module Main where
 
 import qualified Data.Map as M (empty)
 import GHC.IO.Exception (ExitCode)
+import Language.Haskell.Interpreter as I (GhcError(..), InterpreterError(..))
 import System.Environment (getArgs)
 import System.FilePath (takeDirectory)
-import Language.Haskell.Interpreter as I (InterpreterError(..), GhcError(..))
 
-import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..))
 import MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..), EvaluationError(..))
+import MarkTeX.Parsing.Expression (ParseError(..))
+import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.PdfGenerator (documentToPdf, PDFGenerationError(..))
 import MarkTeX.ReadJson (readOptionalJson, ReadJsonError(..))
-import MarkTeX.Parsing.Expression (ParseError(..))
 import MarkTeX.TemplateLang (TData)
-import MarkTeX (Settings)
 
--- | 'MarkTexError'
+-- | The 'MarkTexError' datatype encapsulates every possible error that can be raised during the execution of the program.
+-- This datatype catches the errors of the different program steps, which may all result in some error.
+-- (This datatype is currently not used, but may be used when overhauling the structure of the main function. This is currently done in a separate branch.) 
 data MarkTexError = ParsingError ParseError
                   | ReadingDataError ReadJsonError
                   | EvaluatingError EvaluationError
                   | ConvertingToLaTeXError ToLatexError
                   | GeneratingPDFError PDFGenerationError
 
--- | The 'main' function takes a markdown file and converts it to a pdf file.
--- Arguments are markdown file full file name and output file name of pdf file which receives .pdf extension later on.
+-- | The 'main' function is the starting point of the program. 
+-- It asks the user for an input and output file name.
+-- The possible input arguments are the input MarkTeX file name and the output file name of the PDF file.
+-- The program takes the MarkTeX file and this is evaluated and eventually converted to a PDF file.
 main :: IO ()
 main = do
 
-    -- Get input file name and possibly output file name
+    -- Get the optional input file name and output file name
     args <- getArgs
 
-    -- Input and output file names
+    -- Determine the input and output file names from the user input
     let (mdFileName, pdfFileName) = handleArgs args
 
-    -- Read Markdown File into string
+    -- Read the MarkTeX file into a String
     inputMd <- readFile mdFileName
 
-    -- Evaluate the template parts in the AST
+    -- Execute the different steps of the process
     case parseMd inputMd of
         Left err -> handleParseError err
         Right rootExpr -> do
@@ -45,7 +51,6 @@ main = do
                 Left err -> handleReadDataError err
                 Right jsonData -> do
                     (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData
-                    print (settings info)
                     case evalResult of
                         Left err -> handleEvaluationError err
                         Right rootExpr' -> do
@@ -54,12 +59,16 @@ main = do
                                 Left err -> handleLaTeXConversionError err
                                 Right latexString -> do
                                     putStrLn "Interpreted the markdown to a LaTeX string!"
-                                    documentToPdf latexString (settings info) pdfFileName
-                                    print jsonData
+                                    pdfResult <- documentToPdf latexString (settings info) pdfFileName
+                                    case pdfResult of
+                                        Left err -> handlePDFGenerationError err
+                                        Right () -> do
+                                            putStrLn "Generated the PDF file from the LaTeX string!"
+                                            putStrLn "The MarkTeX program was successfully executed!"
 
 
--- | This function 'handleArgs' determines whether a valid amount of arguments is passed to the 'MarkTeX' executable.
--- It expects two arguments, an input file name of a markdown file and an output file name of the pdf file, where the markdown is converted to pdf format.
+-- | The function 'handleArgs' determines whether a valid amount of arguments is passed to the 'MarkTeX' executable.
+-- It expects two arguments, an input file name of a MarkTeX file and an output file name of the PDF file.
 -- If only one argument is given it expects this to be the input file name and takes the default file name "output.pdf" for the output.
 -- Furthermore if no arguments are given, the file name of the input file is expected to be "main.md".
 handleArgs :: [String] -> (FilePath, FilePath)
@@ -79,18 +88,19 @@ handleArgs args =
             args ->
                 error $ "Expected at most two arguments, but received " ++ show (length args) ++ " arguments!"
 
--- Handling all possible errors
-
+-- | The 'handleParseError' function prints the information to the user that the program failed during the parsing step.
 handleParseError :: ParseError -> IO ()
 handleParseError msg = do
     putStrLn "MarkTeX failed while parsing the input document!"
     printRaisedError msg
 
+-- | The 'handleReadDataError' function prints the information to the user that the program failed in reading the initial json data.
 handleReadDataError :: ReadJsonError -> IO ()
 handleReadDataError err = do
     putStrLn "MarkTeX failed while reading the initial json data file!"
     handleReadDataError' err
 
+-- | The 'handleReadDataError'' function prints the information to the user that the program failed while reading json data from a file.
 handleReadDataError' :: ReadJsonError -> IO ()
 handleReadDataError' err =
     case err of
@@ -100,7 +110,7 @@ handleReadDataError' err =
         FileDoesNotExist path -> do
             putStrLn $ "The file on the path \"" ++ path ++ "\" does not exist or could not be found!"
 
-
+-- | The 'handleEvaluationError' function prints the information to the user that the program failed while interpreting some template language code.
 handleEvaluationError :: EvaluationError -> IO ()
 handleEvaluationError err = do
     putStrLn "MarkTeX failed while evaluating the template language!"
@@ -137,6 +147,7 @@ handleEvaluationError err = do
                     putStrLn $ unlines $ map errMsg ghcErrs
                     
                 
+-- | The 'handleLaTeXConversionError' function prints the information to the user that the program failed while the MarkTeX expression is translated to a LaTeX string.
 handleLaTeXConversionError :: ToLatexError -> IO ()
 handleLaTeXConversionError err = do
     putStrLn "MarkTeX failed during the translation to LaTeX!"
@@ -151,16 +162,18 @@ handleLaTeXConversionError err = do
             putStrLn "The failure was encountered because the path to an image was not given in plain text!"
             printRaisedError msg
 
+-- | The 'handlePDFGenerationError' function prints the information to the user that the program failed during the generation of the PDF.
 handlePDFGenerationError :: PDFGenerationError -> IO ()
 handlePDFGenerationError err = do
     putStrLn "MarkTex failed during the PDF generation step!"
     case err of
-        PDFGenerationError msg -> do
+        PDFGenerationError n msg -> do
             putStrLn "The failure happened while generating the pdf from the LaTeX string!"
             printRaisedError msg
         PDFLaTeXNotFound msg -> do
             putStrLn "The failure happened while checking if \"pdflatex\" is installed!"
             printRaisedError msg
 
+-- | The 'printRaisedError' function is a helper function which prints to the user that an error was raised together with the error message on the following line.
 printRaisedError :: String -> IO ()
 printRaisedError msg = putStrLn $ "The following error was raised:\n" ++ msg 
