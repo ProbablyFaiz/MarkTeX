@@ -1,5 +1,8 @@
 {-# LANGUAGE RankNTypes #-}
-module MarkTeX.Evaluation.MetaEvaluator where
+
+-- | The module 'MarkTeX.Evaluation.MetaEvaluator' evaluates all template commands and template blocks of the input 'MarkTeX' file.
+-- The function 'runEvaluation' outputs the fully evaluated expression given the input expression together with some input data. It also takes in a relative file directory argument.
+module MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..), EvaluationError(..)) where
 
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
@@ -19,8 +22,7 @@ import Data.Either (fromLeft)
 import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
 import GHC.IO (unsafePerformIO)
-import qualified Language.Haskell.Interpreter.Unsafe as I
-import Language.Haskell.Interpreter (eval)
+
 
 ----- Types & Instances -----
 
@@ -28,14 +30,14 @@ import Language.Haskell.Interpreter (eval)
 -- Simple type synonyms
 type Environment = TData
 type Settings = TData
+type RelativeDir = FilePath
 
--- | The `State` datatype contains the current environment data and other meta information.
+-- | The 'State' datatype contains the current state during the evaluation of the MarkTeX language.
+-- It contains the environment data as well as some other meta information.
 data State = State Environment Information
     deriving (Show)
 
-type RelativeDir = FilePath
-
--- | The `Information` datatype contains the meta information about import statements and document settings.
+-- | The 'Information' datatype contains the meta information about import statements and document settings as well as the relative directory path.
 data Information = Information {
   fileDir :: RelativeDir,
   settings :: Settings,
@@ -45,7 +47,7 @@ data Information = Information {
 }
     deriving (Show)
 
--- | The `EvaluationError` datatype contains the different kinds of errors which can occur while evaluating the templates.
+-- | The 'EvaluationError' datatype contains the different kinds of errors which can occur while evaluating the template language code snippets.
 data EvaluationError = MetaCommandError String
                      | ExpectedWhile String
                      | ParseKeyError String
@@ -53,11 +55,11 @@ data EvaluationError = MetaCommandError String
                      | InterpreterError I.InterpreterError
     deriving (Show)
 
--- | This `Eval` datatype is the main datatype which contains the information about evaluation an expression based on the current state.
--- The evaluation will either result in an `Error` or it will succesfully evaluate an expression to `EvalExpr`.
+-- | The 'Eval' datatype is the leading datatype of the template evaluation which contains the information about evaluation an expression based on the current state.
+-- The evaluation will either result in an 'EvaluationError' or it will succesfully evaluate all templates in the MarkTeX AST.
 newtype Eval a = Eval (State -> IO (State, Either EvaluationError a))
 
--- Functor, Applicative and Monad instances of the `Eval` datatype.
+-- Functor, Applicative and Monad instances of the 'Eval' datatype.
 instance Functor Eval where
     fmap f (Eval g) = Eval $
         \s -> do
@@ -94,7 +96,7 @@ instance Monad Eval where
 ----- Main functionality -----
 
 
--- | The function `runEvaluation` evaluates the MarkDown AST with templates to a MarkDown AST without templates.
+-- | The function 'runEvaluation' evaluates the Markdown AST with templates to a Markdown AST without templates.
 -- First it determines the computation to run on the given expression, and then it runs this computation on the given data.
 runEvaluation :: RelativeDir -> P.RootExpr -> TData -> IO (State, Either EvaluationError E.Expr)
 runEvaluation dir e d =
@@ -103,7 +105,7 @@ runEvaluation dir e d =
         absDir <- makeAbsolute dir;
         evaluation (State d (emptySettings absDir));
 
--- | Removes empty Seq from the expression tree, removes unneccesary nesting, merges sequential text expressions
+-- | 'cleanExpr' removes empty Seq from the expression tree, it removes unneccesary nesting and it merges sequential text expressions.
 cleanExpr :: E.Expr -> E.Expr
 cleanExpr (E.Seq es)           = E.Seq $ mergeText $ unpackSeq $ map cleanExpr es
 cleanExpr (E.Heading i e)      = E.Heading i (cleanExpr e)
@@ -117,22 +119,22 @@ cleanExpr (E.Hyperlink e1 e2)  = E.Hyperlink (cleanExpr e1) (cleanExpr e2)
 cleanExpr (E.Image e1 e2)      = E.Image (cleanExpr e1) (cleanExpr e2)
 cleanExpr (E.CodeSnippet s)    = E.CodeSnippet s
 
--- | Unpacks a Seq in a list so that there's no unneccesary nesting
+-- | 'unpackSeq' unpacks a Seq in a list so that there's no unneccesary nesting.
 unpackSeq :: [E.Expr] -> [E.Expr] 
 unpackSeq []                = []
 unpackSeq ((E.Seq ys) : xs) = ys ++ unpackSeq xs
 unpackSeq (x : xs)          = x : unpackSeq xs
 
--- | Merge sequential text expressions
+-- | Merge sequential text expressions with 'mergeText'.
 mergeText :: [E.Expr] -> [E.Expr]
 mergeText []                         = []
 mergeText (E.Text x : E.Text y : xs) = mergeText (E.Text (x ++ y) : xs)
 mergeText (x : xs)                   = x : mergeText xs
 
--- | The `evalRootExpr` function determines what computation to do for evaluating the different `RootExpr` expressions.
--- For the subexpressions `Expr` it calls the `evalExpr` function.
--- When a `CommandBlockCode` is encountered the code string is evaluated and the `evalMetaBlock` function is called with the resulting `MetaCommand`.
--- Other constructors can be mapped to the `EvalExpr` datatype directly, where possibly subexpressions have to be evaluated first of course.
+-- | The 'evalRootExpr' function determines what evaluation to do for evaluating the different 'RootExpr' expressions.
+-- For the subexpressions 'Expr' it calls the 'evalExpr' function.
+-- When a 'CommandBlockCode' is encountered the code string is evaluated and the 'evalMetaBlock' function is called with the resulting 'MetaCommand'.
+-- Other constructors can be mapped to the evaluated 'Expr' datatype directly, where possibly subexpressions have to be evaluated first.
 evalRootExpr :: P.RootExpr -> Eval E.Expr
 evalRootExpr (P.Heading n e)            = E.Heading n <$> evalExpr e
 evalRootExpr (P.Body e)                 = evalExpr e
@@ -143,9 +145,9 @@ evalRootExpr (P.CommandBlockCode str e) = evalCommandCode str >>= \cmd -> evalMe
 evalRootExpr (P.RootSeq es)             = E.Seq <$> traverse evalRootExpr es
 evalRootExpr (P.CodeSnippet s)          = pure $ E.CodeSnippet s
 
--- | The `evalExpr` function says what computation to do for evaluating the different `Expr` expressions.
--- When a `CommandCode` is encountered the code string is evaluated and the `evalMetaCommand` function is called with the resulting `MetaCommand`.
--- Other constructors can be mapped to the `EvalExpr` datatype directly, where possibly subexpressions have to be evaluated first of course.
+-- | The 'evalExpr' function says what computation to do for evaluating the different 'Expr' expressions.
+-- When a 'CommandCode' is encountered the code string is evaluated and the 'evalMetaCommand' function is called with the resulting 'MetaCommand'.
+-- Other constructors can be mapped to the 'EvalExpr' datatype directly, where possibly subexpressions have to be evaluated first of course.
 evalExpr :: P.Expr -> Eval E.Expr
 evalExpr (P.Seq es)          = E.Seq <$> traverse evalExpr es
 evalExpr (P.Text s)          = pure (E.Text s)
@@ -155,7 +157,7 @@ evalExpr (P.Hyperlink e1 e2) = E.Hyperlink <$> evalExpr e1 <*> evalExpr e2
 evalExpr (P.Image e1 e2)     = E.Image <$> evalExpr e1 <*> evalExpr e2
 evalExpr (P.CommandCode str) = evalCommandCode str >>= evalMetaCommand
 
--- | The `evalMetaBlock` function evaluates the metacommands which expect a `RootExpr` expression inside this block.
+-- | The 'evalMetaBlock' function evaluates the metacommands which expect a 'RootExpr' expression inside this block.
 -- When a 'simple' metacommand is encountered an error is raised.
 -- The third argument is the code string, which is needed to keep evaluating in the while loop.
 evalMetaBlock :: MetaCommand -> P.RootExpr -> String -> Eval E.Expr
@@ -166,7 +168,7 @@ evalMetaBlock (While b)   e str = E.Seq <$> evalWhile (toBool b) e str
 evalMetaBlock m           _ _   = raiseError $ MetaCommandError $
     "Input is not a metablock!\nReceived the following metacommand:\n" ++ show m
 
--- | The `evalMetaCommand` function evaluates the simple metacommands.
+-- | The 'evalMetaCommand' function evaluates the simple metacommands.
 -- When the argument is a metablock an error is raised.
 evalMetaCommand :: MetaCommand -> Eval E.Expr
 evalMetaCommand (Insert val)           = pure $ E.Text (toString val)
@@ -185,21 +187,21 @@ evalMetaCommand (ReadJsonQ path qName) = emptyExpr <$ (readJsonData path >>= ins
 evalMetaCommand m                      = raiseError $ MetaCommandError $
     "Input is not a simple metacommand!\nReceived the following metacommand:\n" ++ show m
 
--- | `evalIf` evaluates the given expression based on the interpreted condition.
+-- | 'evalIf' evaluates the given expression based on the interpreted condition.
 -- If the condition is false, it return an empty root expression.
 -- If the condition is true, the expression is evaluated as normal.
 evalIf :: Bool -> P.RootExpr -> Eval E.Expr
 evalIf True  e = evalRootExpr e
 evalIf False _ = pure emptyExpr
 
--- | `evalForList` evaluates the given expression for all `TValue`s in the argument list in order and returns the list of resulting expressions.
+-- | 'evalForList' evaluates the given expression for all 'TValue's in the argument list in order and returns the list of resulting expressions.
 evalForList :: String -> [TValue] -> P.RootExpr -> Eval [E.Expr]
 evalForList str xs e = traverse setVarAndEval xs
     where
         setVarAndEval :: TValue -> Eval E.Expr
         setVarAndEval x = evalMetaCommand (SetVar str x) *> evalRootExpr e
 
--- | `evalWhile` keeps evaluating the given expression while the code string keeps evaluating to true.
+-- | 'evalWhile' keeps evaluating the given expression while the code string keeps evaluating to true.
 evalWhile :: Bool -> P.RootExpr -> String -> Eval [E.Expr]
 evalWhile False _ _   = pure []
 evalWhile True  e str = (:) <$> evalRootExpr e <*> (evalCommandCode str >>= continueWhile)
@@ -209,7 +211,7 @@ evalWhile True  e str = (:) <$> evalRootExpr e <*> (evalCommandCode str >>= cont
         continueWhile m         = pure [] <$ raiseError $ ExpectedWhile $
             "The code evaluated to a While metacommand in a previous iteration, but in this iteration the code evaluated to: " ++ show m
 
--- | `evalCommandCode` defines how to interpret a code string inside the `Eval` datatype.
+-- | 'evalCommandCode' defines how to interpret a code string inside the 'Eval' datatype.
 evalCommandCode :: String -> Eval MetaCommand
 evalCommandCode str = Eval $
     \s -> do
@@ -218,7 +220,7 @@ evalCommandCode str = Eval $
             Left interpErr -> pure (s, Left $ InterpreterError interpErr)
             Right cmd      -> pure (s, Right cmd)
 
--- | `evalInclude` evaluates an external file with the given environment as input data
+-- | 'evalInclude' evaluates an external file with the given environment as input data
 evalInclude :: String -> Maybe TData -> Eval E.Expr
 evalInclude str dat = Eval $
     \(State env info) -> do
@@ -230,8 +232,8 @@ evalInclude str dat = Eval $
           Left s -> error "Parsing included markdown file failed."
           Right evalExpr -> runEvaluation newDir evalExpr evalDat;
 
--- | The `interpretCommand` function interprets the code string as a `MetaCommand` in the `IO` monad.
--- The result is either a valid `MetaCommand` or an `InterpreterError` if the interpreter failed to interpret the code string.
+-- | The 'interpretCommand' function interprets the code string as a 'MetaCommand' in the 'IO' monad.
+-- The result is either a valid 'MetaCommand' or an 'InterpreterError' if the interpreter failed to interpret the code string.
 interpretCommand :: String -> State -> IO (Either I.InterpreterError MetaCommand)
 interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info str)
     where
@@ -277,7 +279,8 @@ interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info
 
 ----- Helper functions for interacting with the state -----
 
--- | The function `lookupTValue` looks up the value for the given key in the environment data.
+
+-- | The function 'lookupTValue' looks up the value for the given key in the environment data.
 evalLookupTValue :: String -> Eval TValue
 evalLookupTValue k = Eval $
     \s@(State env _) ->
@@ -285,60 +288,61 @@ evalLookupTValue k = Eval $
             Left ()       -> return (s, Left $ ParseKeyError $ "Could not correctly parse the lookup path \"" ++ show k ++ "\"!")
             Right lookups -> return (s, Right $ lookupsInTData lookups env)
 
--- | The function `insertTValue` inserts a value for a the given key into the environment data.
+-- | The function 'insertTValue' inserts a value for a the given key into the environment data.
 insertTValue :: String -> TValue -> Eval ()
 insertTValue k v = Eval $
     \(State env info) ->
         let newenv = M.insert k v env
         in return (State newenv info, Right ())
 
--- | The function `insertTValue` inserts a value for a the given key into the environment data.
+-- | The function 'insertTValue' inserts a value for a the given key into the environment data.
 insertTValues :: TData -> Eval ()
 insertTValues newData = Eval $
     \(State env info) ->
         let newenv = env `M.union` newData
         in return (State newenv info, Right ())
 
--- | The `insertSetting` function adds a document setting to the current document settings.
+-- | The 'insertSetting' function adds a document setting to the current document settings.
 insertSetting :: String -> TValue -> Eval ()
 insertSetting k v = Eval $
     \(State env info@Information{settings = docSettings}) ->
         let newDocSettings = M.insert k v docSettings
         in return (State env info{settings = newDocSettings}, Right ())
 
--- | The `insertSettings` function adds a map of document settings to the current document settings.
+-- | The 'insertSettings' function adds a map of document settings to the current document settings.
 insertSettings :: TData -> Eval ()
 insertSettings newData = Eval $
     \(State env info@Information{settings = docSettings}) ->
         let newDocSettings = docSettings `M.union` newData
         in return (State env info{settings = newDocSettings}, Right ())
 
--- | The function `addFileImport` is used to add a file to import to the current import list.
+-- | The function 'addFileImport' is used to add a file to import to the current import list.
 addFileImport :: String -> Eval ()
 addFileImport str = Eval $
     \(State env info@Information{fileImports = fileImports}) ->
         return (State env info{fileImports = fileImports ++ [str]}, Right ())
 
--- | Add an import statement
+-- | 'addImport' is used to add an import statement.
 addImport :: String -> Eval ()
 addImport str = Eval $
     \(State env info@Information{imports = imports}) ->
         return (State env info{imports = imports ++ [str]}, Right ())
 
--- | Add a qualified import statement
+-- | 'addQImport' is used to add a qualified import statement.
 addQImport :: String -> String -> Eval ()
 addQImport strMod strAs = Eval $
     \(State env info@Information{importsQ = importsQ}) ->
         return (State env info{importsQ = importsQ ++ [(strMod, strAs)]}, Right ())
 
--- | Read additional json data
+-- | 'readJsonData' is used to read additional JSON data.
 readJsonData :: String -> Eval TData
 readJsonData path = Eval $ 
     \s@(State env info) -> do
         contents <- readJson path -- or readOptionalJson, to not fail when a file does not exist
-        print contents
         return (s, mapLeft ReadDataError contents)
 
+-- | 'mapLeft' is used to map a function over the 'Left' constructor over a value of type 'Either'.
+-- A 'Right' constructor is left untouched.
 mapLeft :: (a -> b) -> Either a c -> Either b c
 mapLeft f (Left a)  = Left (f a)
 mapLeft _ (Right b) = Right b
@@ -346,25 +350,26 @@ mapLeft _ (Right b) = Right b
 ----- Helper functions for raising an error and retrieving a TValue list, together with some empty data states -----
 
 
--- | This `raiseError` puts any error of the `Error` datatype as the current result.
--- Because of the applicative definition of the `Eval` datatype no more computations will be done and this error will be returned as the final result. 
+-- | This 'raiseError' puts any error of the 'Error' datatype as the current result.
+-- Because of the applicative definition of the 'Eval' datatype no more computations will be done and this error will be returned as the final result. 
 raiseError :: EvaluationError -> Eval a
 raiseError err = Eval $ \s -> return (s, Left err)
 
--- | toListTValue
+-- | 'toListTValue' converts a 'TList' to a normal Haskell list.
+-- Other values are embedded into a singleton list.
 toListTValue :: TValue -> [TValue]
 toListTValue (TList xs) = xs
 toListTValue t          = [t]
 
--- | When an action does not return an expression, an empty expression is returned
+-- | When an action does not return an expression, the empty expression 'emptyExpr' is returned.
 emptyExpr :: E.Expr
 emptyExpr = E.Seq []
 
--- | This state is the initial empty state, which contains no data yet
+-- | This state 'emptyState' is the initial empty state, which does not contain any data yet besides the relative file directory.
 emptyState :: FilePath -> State
 emptyState fileDir = State M.empty (emptySettings fileDir)
 
--- | Empty settings used for initializing an empty state
+-- | The empty settings 'emptySettings' are used for initializing an empty state.
 emptySettings :: FilePath -> Information
 emptySettings fileDir = Information { settings = M.empty
                                     , fileImports = []

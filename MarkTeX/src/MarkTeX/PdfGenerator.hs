@@ -1,4 +1,4 @@
--- | The module 'PdfGenerator' contains utility functions to convert a latex file to a pdf file.
+-- | The module 'MarkTeX.PdfGenerator' contains utility functions to convert a latex file to a pdf file.
 -- The exported 'documentToPdf' function converts a latex string to a pdf file.
 -- Furthermore the 'PDFGenerationError' datatype is exported to such that a possible error can be handled.
 module MarkTeX.PdfGenerator (documentToPdf, PDFGenerationError(..)) where

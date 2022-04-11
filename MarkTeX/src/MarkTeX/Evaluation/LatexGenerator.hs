@@ -1,4 +1,4 @@
--- | The 'MarkTeX.Evaluation.LatexGenerator' module contains the functionality for converting a MarkTeX expression to a LaTeX string.
+-- | The 'MarkTeX.Evaluation.LatexGenerator' module contains the functionality for converting a Markdown AST to a LaTeX string.
 -- It exports the 'documentToLatex' which does this conversion and returns the output string.
 -- Besides that it exports the 'ToLatexError' datatype which can be returned by the 'documentToLatex' function if an error is raised.
 module MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..)) where
@@ -12,13 +12,13 @@ import GHC.IO (unsafePerformIO)
 ----- Data types -----
 
 
--- | The 'ToLatexError' datatype contains all errors that can occur when converting the MarkTeX AST into a LaTeX string.
+-- | The 'ToLatexError' datatype contains all errors that can occur when converting the Markdown AST into a LaTeX string.
 data ToLatexError = InvalidSectionLevel String
                   | ExpectedHyperlinkText String
                   | ExpectedImageText String
     deriving (Show)
 
--- | The 'ToLatex' datatype contains the result of converting the MarkTeX AST into a LaTeX string.
+-- | The 'ToLatex' datatype contains the result of converting the Markdown AST into a LaTeX string.
 -- When the conversion fails a 'ToLatexError' is raised, otherwise on success it returns a LaTeX string.
 type ToLatex = Either ToLatexError String
 
@@ -44,9 +44,9 @@ infixl 4 <++
 (<++) a b = (++) <$> a <*> pure b
 
 
------ Functions for converting a full MarkTeX AST into a LaTeX string -----
+----- Functions for converting a full Markdown AST into a LaTeX string -----
 
--- | The 'documentToLatex' function adds the outer LaTeX layout, together with optional document settings, to the LaTeX string before converting the given MarkTeX AST. 
+-- | The 'documentToLatex' function adds the outer LaTeX layout, together with optional document settings, to the LaTeX string before converting the given Markdown AST. 
 documentToLatex :: Expr -> TData -> ToLatex
 documentToLatex re docSettings =
   "\\documentclass[12pt]{article}\n"

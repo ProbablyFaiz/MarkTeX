@@ -1,7 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+
+-- | The 'MarkTeX.Parsing.Expression' module contains the datatypes for the lexer tokens 'Token' and the parser output expressions 'Expr' and 'RootExpr'.
 module MarkTeX.Parsing.Expression where
 import Data.Data (Data)
 
+-- | The datatype 'Token' contains all tokens that are parsed by the MarkTeX lexer.
 data Token
   = THeading Int
   | TImageStart
@@ -21,6 +24,8 @@ data Token
   | TNewLine
   deriving (Show, Eq)
 
+-- | The datatype 'RootExpr' contains all the possible root expressions of the MarkTeX language.
+-- These root expressions can contain simple expressions which are listed under the 'Expr' datatype.
 data RootExpr
   = Heading Int Expr
   | Body Expr
@@ -32,6 +37,7 @@ data RootExpr
   | RootSeq [RootExpr]
   deriving (Show, Eq, Data)
 
+-- | The datatype 'Expr' contains all the possible simple expressions of the MarkTeX language.
 data Expr
   = Seq [Expr]
   | Text String
@@ -43,4 +49,3 @@ data Expr
   deriving (Show, Eq, Data)
 
 type ParseError = String
-
