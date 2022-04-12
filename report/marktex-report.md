@@ -67,19 +67,19 @@ Following this metacommand these metablocks contain some body spanning the follo
 
 There are many supported metacommands. The metacommands used in metablocks are either conditionals or loops, which must be one of the following:
 
-- If TValue, IfVar String
-- For String TValue, While TValue
+- *If TValue, IfVar String*
+- *For String TValue, While TValue*
 
 All other metacommands are simple metacommands, these other metacommands are:
 
-- Insert TValue, InsertVar String, InsertExpr Expr
-- SetVar String TValue
-- DocSetting String TValue, DocSettings TData
-- LoadHsFile String, Import String, ImportQ String String
-- Include String, IncludeWith String TData
-- ReadJson String, ReadJsonQ String String
+- *Insert TValue, InsertVar String, InsertExpr Expr*
+- *SetVar String TValue*
+- *DocSetting String TValue, DocSettings TData*
+- *LoadHsFile String, Import String, ImportQ String String*
+- *Include String, IncludeWith String TData*
+- *ReadJson String, ReadJsonQ String String*
 
-The 'TValue' and 'TData' arguments to the Metacommand constructors can be given any data that can be converted to a 'TValue' or 'TData'. There are exposed functions *ifTrue*, *ifFalse*, *insert*, *docSetting*, *docSettings*, *set*, *for* and *while* that make this possible. They take any value which can be converted to a 'TValue' or 'TData' and construct a valid Metacommand from the given input.
+The `TValue' and `TData' arguments to the Metacommand constructors can be given any data that can be converted to a `TValue' or `TData'. There are exposed functions *ifTrue*, *ifFalse*, *insert*, *docSetting*, *docSettings*, *set*, *for* and *while* that make this possible. They take any value which can be converted to a `TValue' or `TData' and construct a valid Metacommand from the given input.
 
 ## \TeX/PDF Backend
 
