@@ -12,14 +12,16 @@ import qualified Prelude as P
 import Prelude hiding (not)
 import MarkTeX.TemplateLang.Expression
 
-data MetaCommand = If TValue | IfVar String | 
+data MetaCommand = 
+  If TValue | IfVar String | 
   Insert TValue | InsertVar String | InsertExpr Expr |
+  SetVar String TValue | 
   DocSetting String TValue | DocSettings TData |
   -- ImportQ = ModuleName QualifiedName
   LoadHsFile String | Import String | ImportQ String String |
   Include String | IncludeWith String TData | 
-  SetVar String TValue | For String TValue | While TValue |
-  ReadJson String | ReadJsonQ String String
+  ReadJson String | ReadJsonQ String String |
+  For String TValue | While TValue
   -- TODO add LateX commands (with options)
   -- TODO add a nice shortcut function with the above for colors
   deriving (Read, Show, Typeable)
