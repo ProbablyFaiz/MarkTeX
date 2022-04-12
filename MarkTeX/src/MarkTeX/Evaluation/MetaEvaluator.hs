@@ -2,7 +2,7 @@
 
 -- | The module 'MarkTeX.Evaluation.MetaEvaluator' evaluates all template commands and template blocks of the input 'MarkTeX' file.
 -- The function 'runEvaluation' outputs the fully evaluated expression given the input expression together with some input data. It also takes in a relative file directory argument.
-module MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..), EvaluationError(..)) where
+module MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Environment(..), Information(..), State(..), EvaluationError(..)) where
 
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
