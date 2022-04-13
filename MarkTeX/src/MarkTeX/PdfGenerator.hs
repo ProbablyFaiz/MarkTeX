@@ -33,7 +33,7 @@ documentToPdf latexString docSettings pdfFileName = do
     writeFile tempTexFile latexString
 
     -- Check if pdflatex is installed
-    installedExitCode <- system "pdflatex --help > /dev/null"
+    installedExitCode <- system "pdflatex --help"
     case installedExitCode of
         ExitFailure n -> 
             return $ Left $ PDFLaTeXNotFound "The command \"pdflatex\" was not found! Make sure that you have a LaTeX installation on your computer system to convert a LaTeX file to pdf format."
@@ -56,7 +56,7 @@ latexToPdf outputDir texFile pdfFile = system $ pdfLatexCommand outputDir texFil
                                                 " && " ++ mvOutputPdfCommand outputDir pdfFile
     where
         pdfLatexCommand :: FilePath -> FilePath -> FilePath -> String
-        pdfLatexCommand out tex pdf = "pdflatex -halt-on-error -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex ++ " > /dev/null"
+        pdfLatexCommand out tex pdf = "pdflatex -halt-on-error -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex
 
         mvOutputPdfCommand :: FilePath -> FilePath -> String
         mvOutputPdfCommand out pdf = let pdfPath = pdf ++ ".pdf" in "mv " ++ joinPath [out, pdfPath] ++ " " ++ pdfPath
