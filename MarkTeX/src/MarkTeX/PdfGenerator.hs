@@ -7,8 +7,8 @@ import MarkTeX.TemplateLang (TData)
 import MarkTeX.TemplateLang.Expression (Expr)
 
 import GHC.IO.Exception (ExitCode(..))
-import System.Directory (removeFile, createDirectoryIfMissing, removeDirectoryRecursive, renameFile)
-import System.FilePath (joinPath)
+import System.Directory (removeFile, createDirectoryIfMissing, removeDirectoryRecursive, renameFile, makeAbsolute)
+import System.FilePath (joinPath, takeDirectory, takeFileName, (</>))
 import System.Process (system)
 
 -- | The 'PDFGenerationError' datatype contains the possible errors that can be raised during the generation of the PDF.
@@ -18,10 +18,12 @@ data PDFGenerationError = PDFGenerationError Int String
 
 -- | The 'documentToPdf' function takes a LateX string together with certain document settings in a 'TData' format and converts it to a pdf file.
 documentToPdf :: String -> TData -> FilePath -> IO (Either PDFGenerationError ())
-documentToPdf latexString docSettings pdfFileName = do
+documentToPdf latexString docSettings pdfFilePath = do
 
     -- File name for intermediate tex state
     let tempDir = "tmp-marktex"
+    let outputDir = takeDirectory pdfFilePath
+    let pdfFileName = takeFileName pdfFilePath
 
     -- Create the directory
     createDirectoryIfMissing False tempDir
@@ -39,28 +41,24 @@ documentToPdf latexString docSettings pdfFileName = do
             return $ Left $ PDFLaTeXNotFound "The command \"pdflatex\" was not found! Make sure that you have a LaTeX installation on your computer system to convert a LaTeX file to pdf format."
         ExitSuccess -> do
             -- Convert the latex file to a pdf file with pdflatex
-            exitCode <- latexToPdf tempDir tempTexFile pdfFileName
-
+            exitCode <- latexToPdf tempDir outputDir tempTexFile pdfFileName
             -- Delete the temporary files 
             removeDirectoryRecursive tempDir
-
             -- Handle the value of the exit code
             handleExitCode exitCode
      
 -- | The 'latexToPdf' function converts a latex file into a pdf file by using pdflatex.
-latexToPdf :: FilePath -> FilePath -> FilePath -> IO ExitCode
-latexToPdf outputDir texFile pdfFile = system $ pdfLatexCommand outputDir texFile pdfFile ++
-                                                -- Run pdfLaTeX again for cross-references etc.
-                                                " && " ++ pdfLatexCommand outputDir texFile pdfFile ++
-                                                -- Move the pdf file to the outer directory if the compile succeeds
-                                                " && " ++ mvOutputPdfCommand outputDir pdfFile
-    where
-        pdfLatexCommand :: FilePath -> FilePath -> FilePath -> String
-        pdfLatexCommand out tex pdf = "pdflatex -halt-on-error -output-directory=" ++ out ++ " -jobname=" ++ pdf ++ " " ++ tex
-
-        mvOutputPdfCommand :: FilePath -> FilePath -> String
-        mvOutputPdfCommand out pdf = let pdfPath = pdf ++ ".pdf" in "mv " ++ joinPath [out, pdfPath] ++ " " ++ pdfPath
-
+latexToPdf :: FilePath -> FilePath -> FilePath -> FilePath -> IO ExitCode
+latexToPdf tempDir outputDir texFile pdfFileName = do
+    let mvOutputPdfCommand :: String
+        mvOutputPdfCommand = "mv " ++ tempDir </> pdfFileName ++ ".pdf" ++ " " ++ outputDir </> pdfFileName
+    let pdfLatexCommand :: String
+        pdfLatexCommand = "pdflatex -halt-on-error -output-directory=" ++ tempDir ++ " -jobname=" ++ pdfFileName ++ " " ++ texFile
+    -- Run pdfLaTeX twice for cross-references etc. then move the pdf file to the output directory if the compile succeeds
+    system pdfLatexCommand;
+    system pdfLatexCommand;
+    system mvOutputPdfCommand;
+            
 -- | The 'handleExitCode' function determines what to output to the user depending on the exit code of the system command that is ran on the command line.
 -- If the exitcode points to a successful execution then () is returned which signals a successful execution.
 handleExitCode :: ExitCode -> IO (Either PDFGenerationError ())

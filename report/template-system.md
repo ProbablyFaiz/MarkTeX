@@ -27,7 +27,7 @@ Metacommands are currently evaluated using the `hint' library. To make the JSON 
 This temporary haskell file is then imported into the context. Currently everything works well except for module imports, the `hint' library doesn't automatically detect the available package databases which means these modules can't be found.
 The current workaround for this is to create a Haskell file, import the neccesary modules and re-export them. This Haskell file can then be imported using the `LoadHsFile' command.
 
-`TValue' is defined as **data** TValue = TString **String** | TNumber **Float** | TBool **Bool** | TList **[TValue]** | TData **TData** | TNull.
+`TValue' is defined as **data** TValue = TString **String** | TNumber **Float** | TBool **Bool** | TList ```[**TValue**]``` | TData **TData** | TNull.
 This closely represents the JSON datatype which is the data that we will be working with.
 In order to keep the Haskell code within the template from becoming very verbose we applied a few tricks:
 

@@ -10,8 +10,11 @@ All the commands specified below must be run in the top-level directory of the M
 You can build the project by running the following:
 `stack build`
 
-To run the program for an input Markdown/MarkTeX file *input.md*:
-`stack run -- input.md`
+To run the program for an input Markdown/MarkTeX file *input.md*, an output file *output.pdf*:
+`stack run -- input.md output.pdf`
+
+To run it with data from a file *data.json*:
+`stack run -- input.md output.pdf data.json`
 
 Running the test suite can be done with:
 `stack test`

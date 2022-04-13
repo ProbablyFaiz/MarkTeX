@@ -1,4 +1,4 @@
-{{ docSetting "preambleStatements" "\\geometry{a4paper,margin=1.5in}" }}
+{{ docSetting "preambleStatements" "\\geometry{a4paper,margin=0in}" }}
 
 (TODO: Add cover page support to MarkTeX or equivalent LaTeX commands)
 

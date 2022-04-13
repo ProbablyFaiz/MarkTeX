@@ -24,12 +24,13 @@ data ReadJsonError = DecodeJson String
 
 -- | The function 'readOptionalJson' reads data from a json file if the file exists.
 -- If the file does not exist an empty environment is returned.
-readOptionalJson :: String -> IO (Either ReadJsonError TData)
-readOptionalJson fileName = do
+readOptionalJson :: Maybe String -> IO (Either ReadJsonError TData)
+readOptionalJson Nothing = return $ Right M.empty
+readOptionalJson (Just fileName) = do
     fileExists <- doesFileExist fileName
     if fileExists
         then BS.readFile fileName <&> bytesToTData
-        else return $ Right M.empty
+        else return $ Left $ FileDoesNotExist fileName
 
 -- | The function 'readOptionalJson' reads data from a json file if the file exists.
 -- If the file does not exist it returns a 'FileDoesNotExist' error.
