@@ -52,26 +52,25 @@ main = do
             (Right _) -> error "Error: Expected left"
 
     -- Execute the different steps of the process
-    do
-        let parseResult = parseMd inputMd;
-        when (isLeft parseResult) (handleParseError $ leftUnsafe parseResult);
-        let rootExpr = rightUnsafe parseResult;
+    let parseResult = parseMd inputMd;
+    when (isLeft parseResult) (handleParseError $ leftUnsafe parseResult);
+    let rootExpr = rightUnsafe parseResult;
 
-        jsonResult <- readOptionalJson jsonFileName;
-        when (isLeft jsonResult) (handleReadDataError $ leftUnsafe jsonResult);
-        let jsonData = rightUnsafe jsonResult;
+    jsonResult <- readOptionalJson jsonFileName;
+    when (isLeft jsonResult) (handleReadDataError $ leftUnsafe jsonResult);
+    let jsonData = rightUnsafe jsonResult;
 
-        (State _ info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData;
-        when (isLeft evalResult) (handleEvaluationError $ leftUnsafe evalResult);
-        let evalExpr' = rightUnsafe evalResult;
+    (State _ info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData;
+    when (isLeft evalResult) (handleEvaluationError $ leftUnsafe evalResult);
+    let evalExpr' = rightUnsafe evalResult;
 
-        let latexResult = documentToLatex evalExpr' (settings info);
-        when (isLeft latexResult) (handleLaTeXConversionError $ leftUnsafe latexResult);
-        let latexString = rightUnsafe latexResult;
+    let latexResult = documentToLatex evalExpr' (settings info);
+    when (isLeft latexResult) (handleLaTeXConversionError $ leftUnsafe latexResult);
+    let latexString = rightUnsafe latexResult;
 
-        pdfResult <- documentToPdf latexString (settings info) pdfFileName
-        when (isLeft pdfResult) (handlePDFGenerationError $ leftUnsafe pdfResult);
-        putStrLn ("Successfully generated " ++ pdfFileName);
+    pdfResult <- documentToPdf latexString (settings info) pdfFileName
+    when (isLeft pdfResult) (handlePDFGenerationError $ leftUnsafe pdfResult);
+    putStrLn ("Successfully generated " ++ pdfFileName);
 
 
 -- | The function 'handleArgs' determines whether a valid amount of arguments is passed to the 'MarkTeX' executable.
