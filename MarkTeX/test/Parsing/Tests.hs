@@ -52,7 +52,7 @@ parseTestToTestTree :: ParseTest -> TestTree
 parseTestToTestTree (ParseTest str file ps) = testGroup str tests where
     expr :: RootExpr
     expr = case parseMd $ unsafePerformIO (readFile ("test/Parsing/inputs/" </> file)) of
-      Left s -> error "Parse failed"
+      Left _ -> error "Parse failed"
       Right re -> re
     testToAssertion :: ParserPredicate -> Assertion
     testToAssertion (ContainsExpr e)     = assertBool ("Cannot find " ++ show e ++ ", got " ++ show expr) (containsEPredicate e expr)
