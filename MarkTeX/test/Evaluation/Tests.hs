@@ -71,6 +71,9 @@ evalTests' = [
             ("DocSetting", DocSettingEquals "Setting1" (TString "Value1")),
             ("DocSettings 2", DocSettingEquals "Setting2" (TString "Value2")),
             ("DocSettings 3", DocSettingEquals "Setting3" (TString "Value3"))
+        ], EvalTest "Import json" "importjson.md" "empty.json" [
+            ("Import", ContainsExpr (Italic $ Text "Imported")),
+            ("ImportQ", ContainsExpr (Bold $ Text "Imported"))
         ]
     ]
 

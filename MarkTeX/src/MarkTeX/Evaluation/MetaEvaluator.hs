@@ -334,8 +334,8 @@ addQImport strMod strAs = Eval $
 -- | 'readJsonData' is used to read additional JSON data.
 readJsonData :: String -> Eval TData
 readJsonData path = Eval $ 
-    \s@(State _ _) -> do
-        contents <- readJson path
+    \s@(State _ info) -> do
+        contents <- readJson (fileDir info </> path)
         return (s, mapLeft ReadDataError contents)
 
 -- | 'mapLeft' is used to map a function over the 'Left' constructor over a value of type 'Either'.
