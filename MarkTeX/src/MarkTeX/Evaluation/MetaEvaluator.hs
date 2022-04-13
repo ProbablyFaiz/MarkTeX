@@ -230,7 +230,9 @@ evalInclude str dat = Eval $
         let newDir = takeDirectory filePath;
         case parseMd inputMd of
           Left s -> error "Parsing included markdown file failed."
-          Right evalExpr -> runEvaluation newDir evalExpr evalDat;
+          Right evalExpr -> do
+            (State env' info', result) <- runEvaluation newDir evalExpr evalDat;
+            return (State (env `M.union` env') info {settings = settings info `M.union` settings info'}, result)
 
 -- | The 'interpretCommand' function interprets the code string as a 'MetaCommand' in the 'IO' monad.
 -- The result is either a valid 'MetaCommand' or an 'InterpreterError' if the interpreter failed to interpret the code string.

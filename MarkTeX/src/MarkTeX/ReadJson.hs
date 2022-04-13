@@ -32,7 +32,7 @@ readOptionalJson (Just fileName) = do
         then BS.readFile fileName <&> bytesToTData
         else return $ Left $ FileDoesNotExist fileName
 
--- | The function 'readOptionalJson' reads data from a json file if the file exists.
+-- | The function 'readJson' reads data from a json file if the file exists.
 -- If the file does not exist it returns a 'FileDoesNotExist' error.
 readJson :: String -> IO (Either ReadJsonError TData)
 readJson fileName = do
