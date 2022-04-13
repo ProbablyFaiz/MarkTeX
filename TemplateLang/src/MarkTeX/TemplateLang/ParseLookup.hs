@@ -1,13 +1,9 @@
+{-# LANGUAGE LambdaCase #-}
 module MarkTeX.TemplateLang.ParseLookup (parseLookup, Lookup(..)) where
 
 import Control.Applicative ( Alternative(..) )
-
 import Data.Char (digitToInt)
-
 import GHC.Unicode (isDigit)
-
-import MarkTeX.TemplateLang.Values
-import qualified Data.Map as M
 
 ----- Parser type definition -----
 
@@ -137,28 +133,18 @@ pMany = many
 pFail :: Parser a
 pFail = empty
 
-pSucceed :: a -> Parser a
-pSucceed = pure
-
 -- Parse a value and return it if it satisfies the condition, otherwise return an error message
 pCondition :: (a -> Bool) -> Parser a -> Parser a
 pCondition p g = g >>= \v -> if p v then pure v else pFail
 
 -- Parse chars and strings
 pAnyChar :: Parser Char
-pAnyChar = 
-    Parser 
-        (\s ->
-            case s of
-                []     -> Left  ()
-                (x:xs) -> Right (x, xs)
-        )
+pAnyChar = Parser $ \case
+    []     -> Left  ()
+    (x:xs) -> Right (x, xs)
     
 pChar :: Char -> Parser Char
 pChar x = pCondition (== x) pAnyChar
-
-pString :: String -> Parser String
-pString = traverse pChar
 
 -- Parse enclosed expressions, in this case expression between square brackets
 pEnclosed :: Char -> Parser a -> Char -> Parser a

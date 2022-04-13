@@ -29,9 +29,7 @@ library
       MarkTeX.TemplateLang.Command
       MarkTeX.TemplateLang.Data
       MarkTeX.TemplateLang.Expression
-      MarkTeX.TemplateLang.Instances
       MarkTeX.TemplateLang.List
-      MarkTeX.TemplateLang.Number
       MarkTeX.TemplateLang.ParseLookup
       MarkTeX.TemplateLang.Values
   other-modules:
@@ -41,5 +39,4 @@ library
   build-depends:
       base >=4.7 && <5
     , containers ==0.6.5.1
-    , split ==0.2.3.4
   default-language: Haskell2010

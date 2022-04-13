@@ -3,7 +3,6 @@ module Parsing.Predicates where
 import MarkTeX.Parsing.Expression
 import Data.Data (toConstr)
 import Data.Either (rights, lefts)
-import Data.Bits (Bits(xor))
 
 type AnyExpr = Either Expr RootExpr
 
@@ -37,25 +36,26 @@ isExprInExpr x y = if toConstr x == toConstr y
 -- | Matches all inner expressions of an expression
 allMatch :: [AnyExpr] -> [AnyExpr] -> Bool
 allMatch []       []       = True 
-allMatch []       ys       = False 
-allMatch xs       []       = False
+allMatch []       _        = False 
+allMatch _        []       = False
 allMatch (x : xs) (y : ys) = match x y && allMatch xs ys
 
 match :: AnyExpr -> AnyExpr -> Bool 
-match (Left (Seq []))      (Left y)  = True 
+match (Left (Seq []))      (Left _)  = True 
 match (Left x)             (Left y)  = x == y
-match (Right (RootSeq [])) (Right y) = True 
+match (Right (RootSeq [])) (Right _) = True 
 match (Right x)            (Right y) = x == y
-match x                    y         = False
+match _                    _         = False
 
 innerExprsRE :: RootExpr -> [AnyExpr]
-innerExprsRE (Heading i e)           = [Left $ Text (show i), Left e]
-innerExprsRE (Body e)                = [Left e]
-innerExprsRE (OrderedList es)        = map Left es
-innerExprsRE (UnorderedList es)      = map Left es
-innerExprsRE NewLine                 = []
+innerExprsRE (Heading i e)             = [Left $ Text (show i), Left e]
+innerExprsRE (Body e)                  = [Left e]
+innerExprsRE (OrderedList es)          = map Left es
+innerExprsRE (UnorderedList es)        = map Left es
+innerExprsRE NewLine                   = []
 innerExprsRE (CommandBlockCode str re) = [Left $ Text str, Right re]
-innerExprsRE (RootSeq res)           = map Right res
+innerExprsRE (RootSeq res)             = map Right res
+innerExprsRE (CodeSnippet _)           = []
 
 innerExprsE :: Expr -> [Expr]
 innerExprsE (Seq es)          = es

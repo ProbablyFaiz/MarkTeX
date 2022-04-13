@@ -11,15 +11,6 @@ import MarkTeX.TemplateLang.Values
 import GHC.Exts
 import qualified Prelude as P
 import Prelude hiding ((++))
-import Data.Type.Equality
-
-instance IsList TValue where
-    type Item TValue = TValue
-    fromList = TList
-    fromListN _ = TList
-    toList (TList xs)    = xs
-    toList (TString str) = map (TString . show) str
-    toList x             = error ("Not a list: " ++ show x)
 
 class Concat a b c where
     (++) :: a -> b -> c

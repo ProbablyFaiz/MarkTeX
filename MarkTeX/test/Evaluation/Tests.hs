@@ -8,12 +8,10 @@ import MarkTeX.Parsing.Parser (parseMd)
 import Test.Tasty
 import Test.Tasty.HUnit
 import GHC.IO (unsafePerformIO)
-import System.FilePath ((</>), takeDirectory, dropFileName)
+import System.FilePath ((</>))
 import MarkTeX.TemplateLang (TData, toString, TValue (TString))
 import qualified Data.Map as M
-import MarkTeX (readJson, runEvaluation, EvaluationError, State (State), Information (settings), Environment)
-import MarkTeX.Evaluation.MetaEvaluator (State)
-import Control.Arrow (right)
+import MarkTeX (readJson, runEvaluation, State (State), Information (settings))
 import Data.Either (isLeft, fromRight)
 import Test.Tasty.Runners
 
@@ -29,7 +27,7 @@ evalTests = testGroup "Evaluation" (evalTestsSeq $ map evalTestToTestTree evalTe
 evalTestsSeq :: [TestTree] -> [TestTree]
 evalTestsSeq = evalTestsSeq' Nothing where
     evalTestsSeq' :: Maybe String -> [TestTree] -> [TestTree]
-    evalTestsSeq' lastName []     = []
+    evalTestsSeq' _        []     = []
     evalTestsSeq' lastName (t:ts) = case lastName of
         Nothing  -> t : evalTestsSeq' (Just $ getTestName t) ts
         Just str -> after AllFinish str t : evalTestsSeq' (Just $ getTestName t) ts
@@ -73,6 +71,9 @@ evalTests' = [
             ("DocSetting", DocSettingEquals "Setting1" (TString "Value1")),
             ("DocSettings 2", DocSettingEquals "Setting2" (TString "Value2")),
             ("DocSettings 3", DocSettingEquals "Setting3" (TString "Value3"))
+        ], EvalTest "Import json" "importjson.md" "empty.json" [
+            ("Import", ContainsExpr (Italic $ Text "Imported")),
+            ("ImportQ", ContainsExpr (Bold $ Text "Imported"))
         ]
     ]
 
@@ -87,7 +88,7 @@ evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
         Left err  -> error $ show err
         Right dat -> dat
     runEvalResult = unsafePerformIO $! runEvaluation "test/Evaluation/inputs/md/" rootExpr jsonData
-    (State env info) = fst runEvalResult
+    (State _ info) = fst runEvalResult
     evalResult = snd runEvalResult
     testToAssertion :: EvalPredicate -> Assertion
     testToAssertion ReturnsError = assertBool "No error was returned" (isLeft evalResult)
@@ -96,8 +97,8 @@ evalTestToTestTree (EvalTest str mdFile jsonFile ps) = testGroup str tests where
         else case p of
             (ContainsExpr e) -> assertBool ("Cannot find " ++ show e ++ ", got " ++ show evalResult) (containsPredicate e (fromRight emptyExpr evalResult))
             (NotContainsExpr e) -> assertBool ("Found " ++ show e) (not $ containsPredicate e (fromRight emptyExpr evalResult))
-            (DocSettingEquals str val) -> assertBool ("Docsetting " ++ str ++ " does not equal " ++ toString val) (
-                case M.lookup str (settings info) of
+            (DocSettingEquals str' val) -> assertBool ("Docsetting " ++ str' ++ " does not equal " ++ toString val) (
+                case M.lookup str' (settings info) of
                     Nothing   -> False
                     Just val' -> val' == val
                 )

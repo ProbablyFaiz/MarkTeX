@@ -19,15 +19,15 @@ containsPredicate x y = if toConstr x == toConstr y
 -- | Matches all inner expressions of an expression
 allMatch :: [Expr] -> [Expr] -> Bool
 allMatch []       []             = True 
-allMatch []       ys             = True 
-allMatch xs       []             = False
+allMatch []       _              = True 
+allMatch _        []             = False
 -- Don't match on newline's
 allMatch (NewLine : xs) (y : ys) = allMatch xs (y : ys)
 allMatch (x : xs) (NewLine : ys) = allMatch (x : xs) ys
 allMatch (x : xs) (y : ys)       = match x y && allMatch xs ys || allMatch (x : xs) ys
 
 match :: Expr -> Expr -> Bool 
-match (Seq []) y  = True 
+match (Seq []) _  = True 
 match x        y  = x == y
 
 innerExprs :: Expr -> [Expr]
@@ -39,5 +39,6 @@ innerExprs (Seq es)           = es
 innerExprs (Text _)           = []
 innerExprs (Bold e)           = [e]
 innerExprs (Italic e)         = [e]
+innerExprs (CodeSnippet _)    = []
 innerExprs (Hyperlink e1 e2)  = [e1, e2]
 innerExprs (Image e1 e2)      = [e1, e2]

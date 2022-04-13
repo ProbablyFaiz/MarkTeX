@@ -1,17 +1,15 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.6.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 
 name:           MarkTeX
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/Github username here/MarkTeX#readme>
-homepage:       https://github.com/ProbablyFaiz/infoafp-project#readme
-bug-reports:    https://github.com/ProbablyFaiz/infoafp-project/issues
-author:         Author name here
-maintainer:     Author email here
-copyright:      2019 Author name here
+homepage:       https://github.com/ProbablyFaiz/MarkTeX#readme
+bug-reports:    https://github.com/ProbablyFaiz/MarkTeX/issues
+copyright:      2022 Universiteit Utrecht
 license:        BSD3
 build-type:     Simple
 extra-source-files:
@@ -20,7 +18,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/ProbablyFaiz/infoafp-project
+  location: https://github.com/ProbablyFaiz/MarkTeX
 
 library
   exposed-modules:
@@ -37,28 +35,25 @@ library
   hs-source-dirs:
       src
   build-tools:
-      alex
-    , happy
+      alex >=3.2
+    , happy >=1.19
   build-depends:
       TemplateLang
-    , aeson
-    , array
+    , aeson >=1.5
+    , array >=0.5
     , base
-    , bytestring
-    , containers ==0.6.5.1
-    , directory
-    , filepath ==1.4.2.1
-    , hint ==0.9.0.6
-    , mtl
-    , process ==1.*
-    , scientific
-    , split
-    , tasty ==1.4.2.1
-    , tasty-hunit ==0.10.0.3
-    , temporary ==1.3
-    , text
-    , unordered-containers
-    , vector
+    , bytestring >=0.10
+    , containers >=0.6
+    , directory >=1.3
+    , filepath >=1.4
+    , hint >=0.9
+    , process >=1.6
+    , scientific >=0.3
+    , silently >=1.2
+    , temporary >=1.3
+    , text >=1.2
+    , unordered-containers >=0.2
+    , vector >=0.12
   default-language: Haskell2010
 
 executable MarkTeX-exe
@@ -67,31 +62,28 @@ executable MarkTeX-exe
       Paths_MarkTeX
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-tools:
-      alex
-    , happy
+      alex >=3.2
+    , happy >=1.19
   build-depends:
       MarkTeX
     , TemplateLang
-    , aeson
-    , array
+    , aeson >=1.5
+    , array >=0.5
     , base
-    , bytestring
-    , containers ==0.6.5.1
-    , directory
-    , filepath ==1.4.2.1
-    , hint ==0.9.0.6
-    , mtl
-    , process ==1.*
-    , scientific
-    , split
-    , tasty ==1.4.2.1
-    , tasty-hunit ==0.10.0.3
-    , temporary ==1.3
-    , text
-    , unordered-containers
-    , vector
+    , bytestring >=0.10
+    , containers >=0.6
+    , directory >=1.3
+    , filepath >=1.4
+    , hint >=0.9
+    , process >=1.6
+    , scientific >=0.3
+    , silently >=1.2
+    , temporary >=1.3
+    , text >=1.2
+    , unordered-containers >=0.2
+    , vector >=0.12
   default-language: Haskell2010
 
 test-suite MarkTeX-test
@@ -105,29 +97,28 @@ test-suite MarkTeX-test
       Paths_MarkTeX
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
   build-tools:
-      alex
-    , happy
+      alex >=3.2
+    , happy >=1.19
   build-depends:
       MarkTeX
     , TemplateLang
-    , aeson
-    , array
+    , aeson >=1.5
+    , array >=0.5
     , base
-    , bytestring
-    , containers ==0.6.5.1
-    , directory
-    , filepath ==1.4.2.1
-    , hint ==0.9.0.6
-    , mtl
-    , process ==1.*
-    , scientific
-    , split
-    , tasty ==1.4.2.1
-    , tasty-hunit ==0.10.0.3
-    , temporary ==1.3
-    , text
-    , unordered-containers
-    , vector
+    , bytestring >=0.10
+    , containers >=0.6
+    , directory >=1.3
+    , filepath >=1.4
+    , hint >=0.9
+    , process >=1.6
+    , scientific >=0.3
+    , silently >=1.2
+    , tasty >=1.4
+    , tasty-hunit >=0.10
+    , temporary >=1.3
+    , text >=1.2
+    , unordered-containers >=0.2
+    , vector >=0.12
   default-language: Haskell2010

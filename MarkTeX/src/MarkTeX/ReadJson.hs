@@ -10,7 +10,7 @@ import qualified Data.Text as T
 import qualified Data.Vector as V
 import qualified Data.Scientific as SC
 
-import Data.Aeson (eitherDecode, encode, decode, Object(..), Value(..))
+import Data.Aeson (eitherDecode, Value(..))
 import Data.Functor ((<&>))
 import System.Directory (doesFileExist)
 
@@ -63,9 +63,8 @@ getVal :: Value -> TValue
 getVal (Object m) = TData $ process (Object m)
 getVal (Array v)  = TList $ map getVal (V.toList v)
 getVal (String t) = TString $ T.unpack t
-getVal (Number n) = TNumber $ fromInteger coef * 10 ^^ base
-    where
-        coef = SC.coefficient n
-        base = SC.base10Exponent n
+getVal (Number n) = TNumber $ fromInteger coef * 10 ^^ base where
+    coef = SC.coefficient n
+    base = SC.base10Exponent n
 getVal (Bool b)   = TBool b       
 getVal Null       = TNull
