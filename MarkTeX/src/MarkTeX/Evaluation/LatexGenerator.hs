@@ -5,8 +5,6 @@ module MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..)) whe
 
 import MarkTeX.TemplateLang (TData, lookupTData, toString)
 import MarkTeX.TemplateLang.Expression (Expr(..))
-import MarkTeX.TemplateLang.Values (TValue(..))
-import GHC.IO (unsafePerformIO)
 
 
 ----- Data types -----
@@ -87,9 +85,9 @@ exprToLaTeX ds (UnorderedList es) =
   "\\begin{itemize}\n"
     ++> traverseAndCollect (exprToItem ds) es
     <++ "\\end{itemize}\n"
-exprToLaTeX ds NewLine = pure "\n"
+exprToLaTeX _ NewLine = pure "\n"
 exprToLaTeX ds (Seq es) = traverseAndCollect (exprToLaTeX ds) es
-exprToLaTeX ds (Text s) = pure s
+exprToLaTeX _ (Text s) = pure s
 exprToLaTeX ds (Bold e) =
   "\\textbf{"
     ++> exprToLaTeX ds e
@@ -115,9 +113,9 @@ exprToLaTeX ds (Image e (Text url)) =
     ++> exprToLaTeX ds e
     <++ "}\n"
     ++ "\\end{figure}\n"
-exprToLaTeX ds (CodeSnippet s) = pure $ "\\begin{verbatim}" ++ s ++ "\\end{verbatim}\n"
-exprToLaTeX ds (Hyperlink _ _) = Left $ ExpectedHyperlinkText "The url of a hyperlink should be given in plain text!"
-exprToLaTeX ds (Image     _ _) = Left $ ExpectedImageText     "The path to an image should be given in plain text!"
+exprToLaTeX _ (CodeSnippet s) = pure $ "\\begin{verbatim}" ++ s ++ "\\end{verbatim}\n"
+exprToLaTeX _ (Hyperlink _ _) = Left $ ExpectedHyperlinkText "The url of a hyperlink should be given in plain text!"
+exprToLaTeX _ (Image     _ _) = Left $ ExpectedImageText     "The path to an image should be given in plain text!"
 
 -- | The function 'exprToItem' converts the given expression to a LaTeX string.
 -- Then it makes an item for a ordered or unordered list from this string.

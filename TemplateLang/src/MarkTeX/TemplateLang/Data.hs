@@ -3,19 +3,18 @@ module MarkTeX.TemplateLang.Data where
 import MarkTeX.TemplateLang.ParseLookup (parseLookup, Lookup(..))
 import MarkTeX.TemplateLang.Values
 
-import Data.List.Split
 import qualified Data.Map as M
-import Data.Maybe
+import Data.Maybe ( fromMaybe )
 
 toMapMaybe :: TValue -> Maybe TData
 toMapMaybe (TData dat) = Just dat
 toMapMaybe TNull       = Just M.empty
-toMapMaybe x           = Nothing
+toMapMaybe _           = Nothing
 
 toListMaybe :: TValue -> Maybe [TValue]
 toListMaybe (TList xs) = Just xs
 toListMaybe TNull      = Just []
-toListMaybe x          = Nothing
+toListMaybe _          = Nothing
 
 toMap :: TValue -> TData
 toMap x = case toMapMaybe x of

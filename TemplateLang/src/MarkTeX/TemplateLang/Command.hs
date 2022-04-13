@@ -8,7 +8,6 @@ import MarkTeX.TemplateLang.Boolean
 import Data.Bifunctor
 import Data.Data (Typeable)
 import qualified Data.Map as M
-import qualified Prelude as P
 import Prelude hiding (not)
 import MarkTeX.TemplateLang.Expression
 
@@ -49,16 +48,3 @@ for str = For str . toTValue
 
 while :: ToTValue a => a -> MetaCommand
 while = While . toTValue
-
--- Include lowercase versions of the other metacommands as well?
-
--- ifVar :: String -> MetaCommand
--- ifVar = IfVar
--- 
--- insertVar :: String -> MetaCommand
--- insertVar = InsertVar
--- 
--- insertExpr :: Expr -> MetaCommand
--- insertExpr = InsertExpr
---
--- ...

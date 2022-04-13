@@ -4,23 +4,16 @@
 -- For every possible error that is raised detailed information about where the program ran into this error is given to the user.
 module Main where
 
-import qualified Data.Map as M (empty)
-import GHC.IO.Exception (ExitCode)
 import Language.Haskell.Interpreter as I (GhcError(..), InterpreterError(..))
-import System.Environment (getArgs)
 import System.FilePath (takeDirectory)
 
 import MarkTeX.Evaluation.LatexGenerator (documentToLatex, ToLatexError(..))
 import MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Information(..), State(..), EvaluationError(..))
-import MarkTeX.Parsing.Expression (ParseError(..))
+import MarkTeX.Parsing.Expression (ParseError)
 import MarkTeX.Parsing.Parser (parseMd)
 import MarkTeX.PdfGenerator (documentToPdf, PDFGenerationError(..))
 import MarkTeX.ReadJson (readOptionalJson, ReadJsonError(..))
-import MarkTeX.TemplateLang (TData)
-import Data.Maybe (fromMaybe)
-import Data.Bifunctor (bimap)
-import Data.Either (fromRight, isLeft)
-import Control.Monad (when)
+import Data.Either (isLeft)
 import System.Directory.Internal.Prelude
 
 -- | The 'MarkTexError' datatype encapsulates every possible error that can be raised during the execution of the program.
@@ -51,12 +44,12 @@ main = do
     let rightUnsafe :: Either a b -> b 
         rightUnsafe = \case
             (Right x) -> x
-            (Left y)  -> error "Error: Expected right"
+            (Left _)  -> error "Error: Expected right"
 
     let leftUnsafe :: Either a b -> a
         leftUnsafe = \case
-            (Left x) -> x
-            (Right y)  -> error "Error: Expected left"
+            (Left x)  -> x
+            (Right _) -> error "Error: Expected left"
 
     -- Execute the different steps of the process
     do
@@ -68,7 +61,7 @@ main = do
         when (isLeft jsonResult) (handleReadDataError $ leftUnsafe jsonResult);
         let jsonData = rightUnsafe jsonResult;
 
-        (State env info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData;
+        (State _ info, evalResult) <- runEvaluation (takeDirectory mdFileName) rootExpr jsonData;
         when (isLeft evalResult) (handleEvaluationError $ leftUnsafe evalResult);
         let evalExpr' = rightUnsafe evalResult;
 
@@ -78,7 +71,7 @@ main = do
 
         pdfResult <- documentToPdf latexString (settings info) pdfFileName
         when (isLeft pdfResult) (handlePDFGenerationError $ leftUnsafe pdfResult);
-        putStrLn "The MarkTeX program was successfully executed!";
+        putStrLn ("Successfully generated " ++ pdfFileName);
 
 
 -- | The function 'handleArgs' determines whether a valid amount of arguments is passed to the 'MarkTeX' executable.
@@ -90,8 +83,7 @@ handleArgs args = case args of
         (mdFileName, pdfFileName, Nothing)
     [mdFileName, pdfFileName, jsonFileName] ->
         (mdFileName, pdfFileName, Just jsonFileName)
-    args ->
-        error "No input / output names were provided. Please add them to your command."
+    _ -> error "No input / output names were provided. Please add them to your command."
 
 -- | The 'handleParseError' function prints the information to the user that the program failed during the parsing step.
 handleParseError :: ParseError -> IO ()
@@ -178,7 +170,7 @@ handlePDFGenerationError :: PDFGenerationError -> IO ()
 handlePDFGenerationError err = do
     putStrLn "MarkTex failed during the PDF generation step."
     case err of
-        PDFGenerationError n msg -> do
+        PDFGenerationError _ msg -> do
             putStrLn "The failure happened while generating the pdf from the LaTeX string."
             printRaisedError msg
         PDFLaTeXNotFound msg -> do

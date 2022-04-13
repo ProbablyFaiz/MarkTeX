@@ -44,7 +44,7 @@ data AlexUserState = AlexUserState
 alexEOF :: Alex ()
 alexEOF = return ()
 
-ignore input len = alexMonadScan
+ignore _ _ = alexMonadScan
 
 trim :: String -> String
 trim = dropWhileEnd isSpace . dropWhile isSpace
@@ -117,7 +117,7 @@ getUserState = Alex $ \s -> Right (s,alex_ust s)
 
 pushToken :: (String -> Token) -> AlexAction ()
 pushToken tokenizer =
-  \(posn,prevChar,pending,s) len -> modifyUserState (push $ take len s) >> alexMonadScan
+  \(_,_,_,s) len -> modifyUserState (push $ take len s) >> alexMonadScan
     where
        push :: String -> AlexUserState -> AlexUserState
        push s st = st { tokens = tokenizer s : tokens st }

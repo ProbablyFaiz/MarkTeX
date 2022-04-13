@@ -2,7 +2,7 @@
 
 -- | The module 'MarkTeX.Evaluation.MetaEvaluator' evaluates all template commands and template blocks of the input 'MarkTeX' file.
 -- The function 'runEvaluation' outputs the fully evaluated expression given the input expression together with some input data. It also takes in a relative file directory argument.
-module MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Environment(..), Information(..), State(..), EvaluationError(..)) where
+module MarkTeX.Evaluation.MetaEvaluator (runEvaluation, Environment, Information(..), State(..), EvaluationError(..)) where
 
 import qualified Data.Map as M
 import qualified Language.Haskell.Interpreter as I
@@ -11,17 +11,15 @@ import qualified MarkTeX.TemplateLang.Expression as E
 
 import MarkTeX.TemplateLang hiding ((++))
 import MarkTeX.Parsing.Parser (parseMd)
-import MarkTeX.ReadJson (readJson, readOptionalJson, ReadJsonError(..))
+import MarkTeX.ReadJson (readJson, ReadJsonError(..))
 
 import Data.Bifunctor (Bifunctor(..))
 import System.IO.Temp (withTempFile)
 import System.Directory (makeAbsolute)
 import System.FilePath ((</>), takeDirectory)
 import GHC.IO.Handle (hClose, hFlushAll, hIsReadable, hIsWritable, hPutStr)
-import Data.Either (fromLeft)
 import Control.Monad (unless)
 import Data.Maybe (fromMaybe)
-import GHC.IO (unsafePerformIO)
 
 
 ----- Types & Instances -----
@@ -229,27 +227,26 @@ evalInclude str dat = Eval $
         let evalDat = fromMaybe env dat;
         let newDir = takeDirectory filePath;
         case parseMd inputMd of
-          Left s -> error "Parsing included markdown file failed."
-          Right evalExpr -> runEvaluation newDir evalExpr evalDat;
+          Left _     -> error "Parsing included markdown file failed."
+          Right expr -> runEvaluation newDir expr evalDat;
 
 -- | The 'interpretCommand' function interprets the code string as a 'MetaCommand' in the 'IO' monad.
 -- The result is either a valid 'MetaCommand' or an 'InterpreterError' if the interpreter failed to interpret the code string.
 interpretCommand :: String -> State -> IO (Either I.InterpreterError MetaCommand)
-interpretCommand str (State env info) = withHsEnvModule env (runInterpreter info str)
-    where
-        runInterpreter :: Information -> String -> String -> IO (Either I.InterpreterError MetaCommand)
-        runInterpreter info str path = I.runInterpreter $ createInterpreter info str path
+interpretCommand str (State env info) = withHsEnvModule runInterpreter where
+        runInterpreter :: String -> IO (Either I.InterpreterError MetaCommand)
+        runInterpreter path = I.runInterpreter $ createInterpreter path
 
-        createInterpreter :: Information -> String -> String -> I.Interpreter MetaCommand
-        createInterpreter info str path = do
+        createInterpreter :: String -> I.Interpreter MetaCommand
+        createInterpreter path = do
             I.set [I.searchPath I.:= ["."]];
             I.loadModules (path : map (fileDir info </>) (fileImports info));
             I.setImportsQ (("Prelude", Just "P") : map (second Just) (importsQ info) ++ zip (imports info) (repeat Nothing));
             I.setTopLevelModules ("TEnv" : imports info);
             I.interpret str (I.as :: MetaCommand);
 
-        withHsEnvModule :: Environment -> (String -> IO a) -> IO a
-        withHsEnvModule env f = withTempFile "." ".hs" fileHandler
+        withHsEnvModule :: (String -> IO a) -> IO a
+        withHsEnvModule f = withTempFile "." ".hs" fileHandler
             where
                 fileHandler path hFile = do
                     isReadable <- hIsReadable hFile
@@ -305,40 +302,40 @@ insertTValues newData = Eval $
 -- | The 'insertSetting' function adds a document setting to the current document settings.
 insertSetting :: String -> TValue -> Eval ()
 insertSetting k v = Eval $
-    \(State env info@Information{settings = docSettings}) ->
-        let newDocSettings = M.insert k v docSettings
+    \(State env info@Information{settings = settings'}) ->
+        let newDocSettings = M.insert k v settings'
         in return (State env info{settings = newDocSettings}, Right ())
 
 -- | The 'insertSettings' function adds a map of document settings to the current document settings.
 insertSettings :: TData -> Eval ()
 insertSettings newData = Eval $
-    \(State env info@Information{settings = docSettings}) ->
-        let newDocSettings = docSettings `M.union` newData
+    \(State env info@Information{settings = settings'}) ->
+        let newDocSettings = settings' `M.union` newData
         in return (State env info{settings = newDocSettings}, Right ())
 
 -- | The function 'addFileImport' is used to add a file to import to the current import list.
 addFileImport :: String -> Eval ()
 addFileImport str = Eval $
-    \(State env info@Information{fileImports = fileImports}) ->
-        return (State env info{fileImports = fileImports ++ [str]}, Right ())
+    \(State env info@Information{fileImports = fileImports'}) ->
+        return (State env info{fileImports = fileImports' ++ [str]}, Right ())
 
 -- | 'addImport' is used to add an import statement.
 addImport :: String -> Eval ()
 addImport str = Eval $
-    \(State env info@Information{imports = imports}) ->
-        return (State env info{imports = imports ++ [str]}, Right ())
+    \(State env info@Information{imports = imports'}) ->
+        return (State env info{imports = imports' ++ [str]}, Right ())
 
 -- | 'addQImport' is used to add a qualified import statement.
 addQImport :: String -> String -> Eval ()
 addQImport strMod strAs = Eval $
-    \(State env info@Information{importsQ = importsQ}) ->
-        return (State env info{importsQ = importsQ ++ [(strMod, strAs)]}, Right ())
+    \(State env info@Information{importsQ = importsQ'}) ->
+        return (State env info{importsQ = importsQ' ++ [(strMod, strAs)]}, Right ())
 
 -- | 'readJsonData' is used to read additional JSON data.
 readJsonData :: String -> Eval TData
 readJsonData path = Eval $ 
-    \s@(State env info) -> do
-        contents <- readJson path -- or readOptionalJson, to not fail when a file does not exist
+    \s@(State _ _) -> do
+        contents <- readJson path
         return (s, mapLeft ReadDataError contents)
 
 -- | 'mapLeft' is used to map a function over the 'Left' constructor over a value of type 'Either'.
@@ -365,15 +362,11 @@ toListTValue t          = [t]
 emptyExpr :: E.Expr
 emptyExpr = E.Seq []
 
--- | This state 'emptyState' is the initial empty state, which does not contain any data yet besides the relative file directory.
-emptyState :: FilePath -> State
-emptyState fileDir = State M.empty (emptySettings fileDir)
-
 -- | The empty settings 'emptySettings' are used for initializing an empty state.
 emptySettings :: FilePath -> Information
-emptySettings fileDir = Information { settings = M.empty
+emptySettings fileDir' = Information { settings = M.empty
                                     , fileImports = []
                                     , imports = []
                                     , importsQ = []
-                                    , fileDir = fileDir
+                                    , fileDir = fileDir'
                                     }
